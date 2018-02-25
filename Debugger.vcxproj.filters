@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{3cc5d3fe-f4cc-4cb6-b619-9bf87a6f754d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\memory">
+      <UniqueIdentifier>{c9ebd856-bdc7-41fa-8353-f6971ca8b66e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\renderer">
+      <UniqueIdentifier>{0dff7313-2e75-4895-9c44-a729b31531f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contrib">
+      <UniqueIdentifier>{7381c0ba-1148-46de-b81f-5a551ce64c45}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\debugger\Debugger.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\renderer\Renderer.cpp" />
+    <ClCompile Include="contrib\minhook\src\buffer.c">
+      <Filter>contrib</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\minhook\src\hook.c">
+      <Filter>contrib</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\minhook\src\trampoline.c">
+      <Filter>contrib</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\minhook\src\HDE\hde32.c">
+      <Filter>contrib</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\minhook\src\HDE\hde64.c">
+      <Filter>contrib</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\debugger\renderer\Renderer.hpp">
+      <Filter>src\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\buffer.h">
+      <Filter>contrib</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\trampoline.h">
+      <Filter>contrib</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\hde32.h">
+      <Filter>contrib</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\hde64.h">
+      <Filter>contrib</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\pstdint.h">
+      <Filter>contrib</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\table32.h">
+      <Filter>contrib</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\table64.h">
+      <Filter>contrib</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
