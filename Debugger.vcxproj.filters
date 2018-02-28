@@ -13,11 +13,11 @@
     <Filter Include="contrib">
       <UniqueIdentifier>{7381c0ba-1148-46de-b81f-5a551ce64c45}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\wow_client">
+      <UniqueIdentifier>{3899d3ff-7f7f-41c2-8d5b-141da9b1bedb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\debugger\Debugger.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\debugger\renderer\Renderer.cpp" />
     <ClCompile Include="contrib\minhook\src\buffer.c">
       <Filter>contrib</Filter>
@@ -34,6 +34,11 @@
     <ClCompile Include="contrib\minhook\src\HDE\hde64.c">
       <Filter>contrib</Filter>
     </ClCompile>
+    <ClCompile Include="src\debugger\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\Debugger.cpp" />
+    <ClCompile Include="src\debugger\wow_client\LuaState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\debugger\renderer\Renderer.hpp">
@@ -59,6 +64,22 @@
     </ClInclude>
     <ClInclude Include="contrib\minhook\src\HDE\table64.h">
       <Filter>contrib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\Camera.hpp">
+      <Filter>src\wow_client</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\Offsets.hpp" />
+    <ClInclude Include="src\debugger\wow_client\Location.hpp">
+      <Filter>src\wow_client</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\LuaState.hpp">
+      <Filter>src\wow_client</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\memory\ProcessMemory.hpp">
+      <Filter>src\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\Debugger.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

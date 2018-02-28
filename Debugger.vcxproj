@@ -25,7 +25,9 @@
     <ClCompile Include="contrib\minhook\src\hook.c" />
     <ClCompile Include="contrib\minhook\src\trampoline.c" />
     <ClCompile Include="src\debugger\Debugger.cpp" />
+    <ClCompile Include="src\debugger\main.cpp" />
     <ClCompile Include="src\debugger\renderer\Renderer.cpp" />
+    <ClCompile Include="src\debugger\wow_client\LuaState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="contrib\minhook\src\buffer.h" />
@@ -35,7 +37,13 @@
     <ClInclude Include="contrib\minhook\src\HDE\table32.h" />
     <ClInclude Include="contrib\minhook\src\HDE\table64.h" />
     <ClInclude Include="contrib\minhook\src\trampoline.h" />
+    <ClInclude Include="src\debugger\Debugger.hpp" />
+    <ClInclude Include="src\debugger\memory\ProcessMemory.hpp" />
     <ClInclude Include="src\debugger\renderer\Renderer.hpp" />
+    <ClInclude Include="src\debugger\wow_client\Camera.hpp" />
+    <ClInclude Include="src\debugger\wow_client\Location.hpp" />
+    <ClInclude Include="src\debugger\wow_client\LuaState.hpp" />
+    <ClInclude Include="src\debugger\wow_client\Offsets.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -118,6 +126,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;DEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -134,6 +143,7 @@
       <PreprocessorDefinitions>_DEBUG;DEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -152,6 +162,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;DEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -172,6 +183,7 @@
       <PreprocessorDefinitions>NDEBUG;DEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
