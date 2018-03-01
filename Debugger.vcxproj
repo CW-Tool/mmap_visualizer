@@ -27,7 +27,11 @@
     <ClCompile Include="src\debugger\Debugger.cpp" />
     <ClCompile Include="src\debugger\main.cpp" />
     <ClCompile Include="src\debugger\renderer\Renderer.cpp" />
-    <ClCompile Include="src\debugger\wow_client\LuaState.cpp" />
+    <ClCompile Include="src\debugger\wow_client\Camera.cpp" />
+    <ClCompile Include="src\debugger\wow_client\lua\LuaState.cpp" />
+    <ClCompile Include="src\debugger\wow_client\objects\ObjectManager.cpp" />
+    <ClCompile Include="src\debugger\wow_client\objects\Player.cpp" />
+    <ClCompile Include="src\debugger\wow_client\world\World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="contrib\minhook\src\buffer.h" />
@@ -39,11 +43,15 @@
     <ClInclude Include="contrib\minhook\src\trampoline.h" />
     <ClInclude Include="src\debugger\Debugger.hpp" />
     <ClInclude Include="src\debugger\memory\ProcessMemory.hpp" />
+    <ClInclude Include="src\debugger\mmaps\NavMesh.hpp" />
     <ClInclude Include="src\debugger\renderer\Renderer.hpp" />
     <ClInclude Include="src\debugger\wow_client\Camera.hpp" />
     <ClInclude Include="src\debugger\wow_client\Location.hpp" />
-    <ClInclude Include="src\debugger\wow_client\LuaState.hpp" />
+    <ClInclude Include="src\debugger\wow_client\lua\LuaState.hpp" />
+    <ClInclude Include="src\debugger\wow_client\objects\ObjectManager.hpp" />
+    <ClInclude Include="src\debugger\wow_client\objects\Player.hpp" />
     <ClInclude Include="src\debugger\wow_client\Offsets.hpp" />
+    <ClInclude Include="src\debugger\wow_client\world\World.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

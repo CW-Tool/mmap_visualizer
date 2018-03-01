@@ -3,8 +3,9 @@
 
 namespace Wow
 {
-    struct Location
+    class Location
     {
+    public:
         float x;
         float y;
         float z;

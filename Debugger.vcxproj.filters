@@ -16,9 +16,20 @@
     <Filter Include="src\wow_client">
       <UniqueIdentifier>{3899d3ff-7f7f-41c2-8d5b-141da9b1bedb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\wow_client\world">
+      <UniqueIdentifier>{10737b17-79a4-473f-b118-bd68333bb94e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\wow_client\lua">
+      <UniqueIdentifier>{5a2e6154-cf69-4230-b193-489051a0e378}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\wow_client\objects">
+      <UniqueIdentifier>{959462a3-46d2-453d-af6f-c70a22442e5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\mmaps">
+      <UniqueIdentifier>{6fe9a440-d1b1-4182-b5ce-39a66e88b70d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\debugger\renderer\Renderer.cpp" />
     <ClCompile Include="contrib\minhook\src\buffer.c">
       <Filter>contrib</Filter>
     </ClCompile>
@@ -37,8 +48,25 @@
     <ClCompile Include="src\debugger\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\debugger\Debugger.cpp" />
-    <ClCompile Include="src\debugger\wow_client\LuaState.cpp" />
+    <ClCompile Include="src\debugger\renderer\Renderer.cpp">
+      <Filter>src\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\Debugger.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\wow_client\world\World.cpp">
+      <Filter>src\wow_client\world</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\wow_client\lua\LuaState.cpp">
+      <Filter>src\wow_client\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\wow_client\objects\ObjectManager.cpp">
+      <Filter>src\wow_client\objects</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\wow_client\objects\Player.cpp">
+      <Filter>src\wow_client\objects</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\wow_client\Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\debugger\renderer\Renderer.hpp">
@@ -68,11 +96,7 @@
     <ClInclude Include="src\debugger\wow_client\Camera.hpp">
       <Filter>src\wow_client</Filter>
     </ClInclude>
-    <ClInclude Include="src\debugger\wow_client\Offsets.hpp" />
     <ClInclude Include="src\debugger\wow_client\Location.hpp">
-      <Filter>src\wow_client</Filter>
-    </ClInclude>
-    <ClInclude Include="src\debugger\wow_client\LuaState.hpp">
       <Filter>src\wow_client</Filter>
     </ClInclude>
     <ClInclude Include="src\debugger\memory\ProcessMemory.hpp">
@@ -80,6 +104,24 @@
     </ClInclude>
     <ClInclude Include="src\debugger\Debugger.hpp">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\Offsets.hpp">
+      <Filter>src\wow_client</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\world\World.hpp">
+      <Filter>src\wow_client\world</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\lua\LuaState.hpp">
+      <Filter>src\wow_client\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\objects\ObjectManager.hpp">
+      <Filter>src\wow_client\objects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\objects\Player.hpp">
+      <Filter>src\wow_client\objects</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\mmaps\NavMesh.hpp">
+      <Filter>src\mmaps</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

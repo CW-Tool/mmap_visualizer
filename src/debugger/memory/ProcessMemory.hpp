@@ -2,6 +2,7 @@
 #define ProcessMemory_hpp__
 
 #include <windows.h>
+#include <stdexcept>
 
 namespace Debugger
 {
