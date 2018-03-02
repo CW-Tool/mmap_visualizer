@@ -3,21 +3,34 @@
 
 #include "MinHook.h"
 
-
 #include "wow_client/Camera.hpp"
 #include "wow_client/Location.hpp"
 
 #include <exception>
 #include <iostream>
 
+#include "d3dx9.h"
+
+#if defined _M_X64
+#pragma comment(lib, "x64/d3dx9.lib") 
+#elif defined _M_IX86
+#pragma comment(lib, "x86/d3dx9.lib")
+#endif
+
 namespace Debugger
 {
-    Renderer * Renderer::s_renderer = nullptr;
+    Renderer * g_renderer = nullptr;
 
-    Renderer::Renderer( VTABLE_TYPE* vtable, Debugger * debugger )
-        : m_debugger( debugger )
+    Renderer::Renderer( VTABLE_TYPE* vtable )
+        : m_customRenderInProgress( false )
     {
-        s_renderer = this;
+        g_renderer = this;
+
+        MH_STATUS status = MH_Initialize();
+        if ( status != MH_OK )
+        {
+            std::terminate();
+        }
 
         SetupDirectXHooks( vtable );
     }
@@ -27,89 +40,48 @@ namespace Debugger
         MH_Uninitialize();
     }
 
-    void Renderer::EndScene()
-    {
-        m_debugger->Update();
-
-        D3DRECT rect{ 20, 20, 100, 100 };
-        D3DCOLOR color = D3DCOLOR_ARGB( 255, 255, 255, 255 );
-
-        m_device->Clear( 1, &rect, D3DCLEAR_TARGET, color, 0, 0 );
-    }
-
-#define M_DEG2RAD 0.0174532925
-
-    std::optional< Vector2f > Renderer::GetScreenCoord( Wow::Camera & camera, Wow::Location & location )
+    bool Renderer::IsOnScreen( const Vector2f & coord )
     {
         D3DVIEWPORT9 viewport;
         m_device->GetViewport( &viewport );
 
-        RECT rc = { viewport.X, viewport.Y, viewport.Width, viewport.Height };
-
-        float fDiff[ 3 ];
-        fDiff[ 0 ] = location.x - camera.Position.x;
-        fDiff[ 1 ] = location.y - camera.Position.y;
-        fDiff[ 2 ] = location.z - camera.Position.z;
-
-        float fProd = fDiff[ 0 ] * camera.ViewMatrix[ 0 ][ 0 ] + fDiff[ 1 ] * camera.ViewMatrix[ 0 ][ 1 ] + fDiff[ 2 ] * camera.ViewMatrix[ 0 ][ 2 ];
-        if ( fProd < 0 )
-            return std::nullopt;
-
-        float fInv[ 3 ][ 3 ];
-        fInv[ 0 ][ 0 ] = camera.ViewMatrix[ 1 ][ 1 ] * camera.ViewMatrix[ 2 ][ 2 ] - camera.ViewMatrix[ 1 ][ 2 ] * camera.ViewMatrix[ 2 ][ 1 ];
-        fInv[ 1 ][ 0 ] = camera.ViewMatrix[ 1 ][ 2 ] * camera.ViewMatrix[ 2 ][ 0 ] - camera.ViewMatrix[ 1 ][ 0 ] * camera.ViewMatrix[ 2 ][ 2 ];
-        fInv[ 2 ][ 0 ] = camera.ViewMatrix[ 1 ][ 0 ] * camera.ViewMatrix[ 2 ][ 1 ] - camera.ViewMatrix[ 1 ][ 1 ] * camera.ViewMatrix[ 2 ][ 0 ];
-
-        float fDet = camera.ViewMatrix[ 0 ][ 0 ] * fInv[ 0 ][ 0 ] + camera.ViewMatrix[ 0 ][ 1 ] * fInv[ 1 ][ 0 ] + camera.ViewMatrix[ 0 ][ 2 ] * fInv[ 2 ][ 0 ];
-        float fInvDet = 1.0f / fDet;
-
-        fInv[ 0 ][ 1 ] = camera.ViewMatrix[ 0 ][ 2 ] * camera.ViewMatrix[ 2 ][ 1 ] - camera.ViewMatrix[ 0 ][ 1 ] * camera.ViewMatrix[ 2 ][ 2 ];
-        fInv[ 0 ][ 2 ] = camera.ViewMatrix[ 0 ][ 1 ] * camera.ViewMatrix[ 1 ][ 2 ] - camera.ViewMatrix[ 0 ][ 2 ] * camera.ViewMatrix[ 1 ][ 1 ];
-        fInv[ 1 ][ 1 ] = camera.ViewMatrix[ 0 ][ 0 ] * camera.ViewMatrix[ 2 ][ 2 ] - camera.ViewMatrix[ 0 ][ 2 ] * camera.ViewMatrix[ 2 ][ 0 ];
-        fInv[ 1 ][ 2 ] = camera.ViewMatrix[ 0 ][ 2 ] * camera.ViewMatrix[ 1 ][ 0 ] - camera.ViewMatrix[ 0 ][ 0 ] * camera.ViewMatrix[ 1 ][ 2 ];
-        fInv[ 2 ][ 1 ] = camera.ViewMatrix[ 0 ][ 1 ] * camera.ViewMatrix[ 2 ][ 0 ] - camera.ViewMatrix[ 0 ][ 0 ] * camera.ViewMatrix[ 2 ][ 1 ];
-        fInv[ 2 ][ 2 ] = camera.ViewMatrix[ 0 ][ 0 ] * camera.ViewMatrix[ 1 ][ 1 ] - camera.ViewMatrix[ 0 ][ 1 ] * camera.ViewMatrix[ 1 ][ 0 ];
-
-        //camera.ViewMatrix[ 0 ][ 0 ] = fInv[ 0 ][ 0 ] * fInvDet;
-        //camera.ViewMatrix[ 0 ][ 1 ] = fInv[ 0 ][ 1 ] * fInvDet;
-        //camera.ViewMatrix[ 0 ][ 2 ] = fInv[ 0 ][ 2 ] * fInvDet;
-        //camera.ViewMatrix[ 1 ][ 0 ] = fInv[ 1 ][ 0 ] * fInvDet;
-        //camera.ViewMatrix[ 1 ][ 1 ] = fInv[ 1 ][ 1 ] * fInvDet;
-        //camera.ViewMatrix[ 1 ][ 2 ] = fInv[ 1 ][ 2 ] * fInvDet;
-        //camera.ViewMatrix[ 2 ][ 0 ] = fInv[ 2 ][ 0 ] * fInvDet;
-        //camera.ViewMatrix[ 2 ][ 1 ] = fInv[ 2 ][ 1 ] * fInvDet;
-        //camera.ViewMatrix[ 2 ][ 2 ] = fInv[ 2 ][ 2 ] * fInvDet;
-
-        float fView[ 3 ];
-        fView[ 0 ] = fInv[ 0 ][ 0 ] * fDiff[ 0 ] + fInv[ 1 ][ 0 ] * fDiff[ 1 ] + fInv[ 2 ][ 0 ] * fDiff[ 2 ];
-        fView[ 1 ] = fInv[ 0 ][ 1 ] * fDiff[ 0 ] + fInv[ 1 ][ 1 ] * fDiff[ 1 ] + fInv[ 2 ][ 1 ] * fDiff[ 2 ];
-        fView[ 2 ] = fInv[ 0 ][ 2 ] * fDiff[ 0 ] + fInv[ 1 ][ 2 ] * fDiff[ 1 ] + fInv[ 2 ][ 2 ] * fDiff[ 2 ];
-
-        float fCam[ 3 ];
-        fCam[ 0 ] = -fView[ 1 ];
-        fCam[ 1 ] = -fView[ 2 ];
-        fCam[ 2 ] = fView[ 0 ];
-
-        float    fScreenX = ( rc.right - rc.left ) / 2.0f;
-        float    fScreenY = ( rc.bottom - rc.top ) / 2.0f;
-
-        // Thanks pat0! Aspect ratio fix
-        float    fTmpX = fScreenX / tan( ( ( camera.FieldOfView*44.0f ) / 2.0f )*M_DEG2RAD );
-        float    fTmpY = fScreenY / tan( ( ( camera.FieldOfView*35.0f ) / 2.0f )*M_DEG2RAD );
-
-        POINT pctMouse;
-        //pctMouse.x = fScreenX + vCam.fX*fTmpX/vCam.fZ;
-        pctMouse.x = fScreenX + fCam[ 0 ] * fTmpX / fCam[ 2 ];
-        //pctMouse.y = fScreenY + vCam.fY*fTmpY/vCam.fZ;
-        pctMouse.y = fScreenY + fCam[ 1 ] * fTmpY / fCam[ 2 ];
-
-        if ( pctMouse.x < 0 || pctMouse.y < 0 || pctMouse.x > rc.right || pctMouse.y > rc.bottom )
-            return std::nullopt;
-
-        return Vector2f{ ( float )pctMouse.x, ( float )pctMouse.y };
+        return coord.x >= 0.0 && coord.y >= 0.0f && coord.x <= viewport.Width && coord.y <= viewport.Height;
     }
 
-    void Renderer::RenderQuad( float x, float y, float width, float height )
+    std::optional< Vector2f > Renderer::GetScreenCoord( Wow::Camera & camera, Wow::Location & location )
+    {
+        D3DXVECTOR3 pos( location.x, location.y, location.z );
+
+        D3DVIEWPORT9 viewport;
+        m_device->GetViewport( &viewport );
+        
+        D3DXMATRIX proj;
+        D3DXMatrixPerspectiveFovRH( &proj, camera.FieldOfView * 0.6f, camera.Aspect, camera.NearPlane, camera.FarPlane );
+
+        auto camPos = camera.Position;
+        auto camDir = camera.GetForwardDir();
+        auto camUp = camera.GetUpDir();
+
+        D3DXVECTOR3 eye( camPos.x, camPos.y, camPos.z );
+        D3DXVECTOR3 at( eye.x + camDir.x, eye.y + camDir.y, eye.z + camDir.z );
+        D3DXVECTOR3 up( camUp.x, camUp.y, camUp.z );
+
+        D3DXMATRIX view;
+        D3DXMatrixLookAtRH( &view, &eye, &at, &up );
+
+        D3DXMATRIX world;
+        D3DXMatrixIdentity( &world );
+
+        D3DXVECTOR3 coord;
+        D3DXVec3Project( &coord, &pos, &viewport, &proj, &view, &world );
+
+        if ( coord.z > 1.0f || coord.x < 0.0f || coord.x > viewport.Width || coord.y < 0.0f || coord.y > viewport.Height )
+            return std::nullopt;
+
+        return Vector2f{ coord.x, coord.y };
+    }
+
+    void Renderer::RenderQuad( float x, float y, float width, float height, Color color )
     {
         const DWORD D3D_FVF = ( D3DFVF_XYZRHW | D3DFVF_DIFFUSE );
 
@@ -118,8 +90,6 @@ namespace Debugger
             float x, y, z, ht;
             DWORD vcolor;
         };
-
-        auto color = D3DCOLOR_ARGB( 255, 255, 255, 255 );
 
         Vertex verts[ 4 ] =
         {
@@ -141,11 +111,9 @@ namespace Debugger
         }
     }
 
-    void Renderer::RenderLine( Vector2f start, Vector2f end )
+    void Renderer::RenderTriangle( const Vector2f & p0, const Vector2f & p1, const Vector2f & p2, Color color )
     {
-        HRESULT hRet;
-
-        const DWORD D3D_FVF = D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1;
+        const DWORD D3D_FVF = ( D3DFVF_XYZRHW | D3DFVF_DIFFUSE );
 
         struct Vertex
         {
@@ -153,7 +121,34 @@ namespace Debugger
             DWORD vcolor;
         };
 
-        auto color = D3DCOLOR_ARGB( 255, 255, 255, 255 );
+        Vertex verts[ 4 ] =
+        {
+            { p0.x, p0.y, 0.0f, 1.0f, color },
+            { p1.x, p1.y, 0.0f, 1.0f, color },
+            { p2.x, p2.y, 0.0f, 1.0f, color },
+        };
+
+        m_device->SetPixelShader( 0 );
+        m_device->SetRenderState( D3DRS_ALPHABLENDENABLE, true );
+        m_device->SetFVF( D3D_FVF );
+        m_device->SetTexture( 0, NULL );
+
+        auto result = m_device->DrawPrimitiveUP( D3DPT_TRIANGLELIST, 1, verts, sizeof( Vertex ) );
+        if ( FAILED( result ) )
+        {
+            std::cerr << "Failed!";
+        }
+    }
+
+    void Renderer::RenderLine( const Vector2f & start, const Vector2f & end, Color color )
+    {
+        const DWORD D3D_FVF = D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1;
+
+        struct Vertex
+        {
+            float x, y, z, ht;
+            DWORD vcolor;
+        };
 
         Vertex verts[ 2 ] =
         {
@@ -166,43 +161,153 @@ namespace Debugger
         m_device->SetFVF( D3D_FVF );
         m_device->SetTexture( 0, NULL );
 
-        auto result = m_device->DrawPrimitiveUP( D3DPT_LINELIST, 2, verts, sizeof( Vertex ) );
+        auto result = m_device->DrawPrimitiveUP( D3DPT_LINELIST, 1, verts, sizeof( Vertex ) );
         if ( FAILED( result ) )
         {
             std::cerr << "Failed!";
         }
     }
 
-    void Renderer::SetupDirectXHooks( VTABLE_TYPE* vtable )
+    void Renderer::StartCustomRender()
     {
-        MH_STATUS status = MH_Initialize();
+        if ( m_customRenderInProgress )
+        {
+            std::terminate();
+        }
+
+        m_customRenderInProgress = true;
+
+        m_device->GetTexture( 0, &m_state.texture );
+        m_device->GetPixelShader( &m_state.pixelShader );
+        m_device->GetRenderState( D3DRS_ALPHABLENDENABLE, &m_state.alphaBlend );
+        m_device->GetFVF( &m_state.fvf );
+        m_device->GetTransform( D3DTS_VIEW, &m_state.view );
+        m_device->GetTransform( D3DTS_PROJECTION, &m_state.proj );
+        m_device->GetTransform( D3DTS_WORLD, &m_state.world );
+        m_device->GetDepthStencilSurface( &m_state.depthStencil );
+    }
+
+    void Renderer::EndCustomRender()
+    {
+        if ( !m_customRenderInProgress )
+        {
+            std::terminate();
+        }
+
+        m_device->SetTexture( 0, m_state.texture );
+        m_device->SetPixelShader( m_state.pixelShader );
+        m_device->SetRenderState( D3DRS_ALPHABLENDENABLE, m_state.alphaBlend );
+        m_device->SetFVF( m_state.fvf );
+
+        m_device->SetTransform( D3DTS_VIEW, &m_state.view );
+        m_device->SetTransform( D3DTS_PROJECTION, &m_state.proj );
+        m_device->SetTransform( D3DTS_WORLD, &m_state.world );
+        m_device->SetDepthStencilSurface( m_state.depthStencil );
+
+        m_customRenderInProgress = false;
+    }
+
+    template< class T, int VTABLE_IDX >
+    void CreateD3D9Hook( VTABLE_TYPE* vtable, T && hook, bool hookBefore = true )
+    {
+        auto vtable_ptr = reinterpret_cast< DWORD_PTR* >( vtable[ VTABLE_IDX ] );
+
+        static T s_OrigFunc = reinterpret_cast< T >( vtable_ptr );
+        static T s_HookFunc = std::move( hook );
+
+        static T s_RealHookBefore = []( auto ... args )
+        {
+            s_HookFunc( args... );
+
+            return s_OrigFunc( args... );
+        };
+
+        static T s_RealHookAfter = []( auto ... args )
+        {
+            auto result = s_OrigFunc( args... );
+
+            s_HookFunc( args... );
+
+            return result;
+        };
+
+        auto status = MH_CreateHook( vtable_ptr, hookBefore ? s_RealHookBefore : s_RealHookAfter , reinterpret_cast< void** >( &s_OrigFunc ) );
         if ( status != MH_OK )
         {
             std::terminate();
         }
 
-        //! EndScene
+        status = MH_EnableHook( vtable_ptr );
+        if ( status != MH_OK )
         {
-            static EndSceneFunc s_endSceneOrig = reinterpret_cast< EndSceneFunc >( vtable[ VTable::EndScene ] );
-            static EndSceneFunc s_endSceneHook = []( IDirect3DDevice9* pDevice ) -> HRESULT
-            {
-                s_renderer->m_device = pDevice;
-
-                s_renderer->EndScene();
-                return s_endSceneOrig( pDevice );
-            };
-
-            status = MH_CreateHook( reinterpret_cast< DWORD_PTR* >( vtable[ VTable::EndScene ] ), s_endSceneHook, reinterpret_cast< void** >( &s_endSceneOrig ) );
-            if ( status != MH_OK )
-            {
-                std::terminate();
-            }
-
-            status = MH_EnableHook( reinterpret_cast< DWORD_PTR* >( vtable[ VTable::EndScene ] ) );
-            if ( status != MH_OK )
-            {
-                std::terminate();
-            }
+            std::terminate();
         }
+    };
+
+    struct CustomRenderState
+    {
+        uint8_t             zFuncChangeCount = 0;
+        IDirect3DSurface9*  depthSurface = nullptr;
+
+    };
+
+    CustomRenderState g_state;
+
+    void Renderer::SetupDirectXHooks( VTABLE_TYPE* vtable )
+    {
+        CreateD3D9Hook< D3D9::BeginScene, VTable::BeginScene >( vtable, []( IDirect3DDevice9* pDevice ) -> HRESULT
+        {
+            GetRenderer()->m_device = pDevice;
+
+            g_state.zFuncChangeCount = 0;
+            g_state.depthSurface = nullptr;
+
+            return S_OK;
+        } );
+
+        CreateD3D9Hook< D3D9::EndScene, VTable::EndScene >( vtable, []( IDirect3DDevice9* pDevice ) -> HRESULT
+        {
+            auto debugger = GetDebugger();
+            if ( debugger != nullptr )
+            {
+                debugger->Update();
+
+                pDevice->SetRenderState( D3DRS_ZFUNC, D3DCMP_ALWAYS );
+                pDevice->SetDepthStencilSurface( g_state.depthSurface );
+
+                debugger->RenderNavMesh();
+            }
+
+            return S_OK;
+        } );
+
+        CreateD3D9Hook< D3D9::SetDepthStencilSurface, VTable::SetDepthStencilSurface >( vtable, []( IDirect3DDevice9* pDevice, IDirect3DSurface9* surface ) -> HRESULT
+        {
+            if ( g_state.zFuncChangeCount == 2 )
+            {
+                g_state.depthSurface = surface;
+            }
+
+            return S_OK;
+        } );
+
+        CreateD3D9Hook< D3D9::SetRenderState, VTable::SetRenderState >( vtable, []( IDirect3DDevice9* pDevice, D3DRENDERSTATETYPE type, DWORD value ) -> HRESULT
+        {
+            switch ( type )
+            {
+                case D3DRS_ZFUNC:
+                {
+                    ++g_state.zFuncChangeCount;
+                    break;
+                }
+            }
+
+            return S_OK;
+        } );
+    }
+
+    extern Renderer * GetRenderer()
+    {
+        return g_renderer;
     }
 }

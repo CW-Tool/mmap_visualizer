@@ -28,6 +28,6 @@ namespace Wow
     Camera ObjectManager::GetCamera() const
     {
         uintptr_t cameraOffset = m_memory.Read< uintptr_t >( m_memory.Read< uintptr_t >( Camera::PTR_ActiveCamera ) + Camera::REL_CameraOffset );
-        return m_memory.Read< Camera >( cameraOffset );
+        return Camera( m_memory, cameraOffset );
     }
 }

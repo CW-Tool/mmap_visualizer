@@ -36,6 +36,11 @@ namespace Debugger
             }
         }
 
+        uintptr_t GetFunctionFromVtable( uintptr_t offset, size_t functionIndex )
+        {
+            return Read<uintptr_t>( Read<uintptr_t>( offset ) + functionIndex * 4 );
+        }
+
     private:
         HANDLE m_hProcess;
     };

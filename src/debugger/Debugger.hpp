@@ -30,6 +30,7 @@ namespace Debugger
         std::optional< NavMesh >    LoadNavMesh( uint32_t mapId, const Vector2i & coord );
 
         void                        Update();
+        void                        RenderNavMesh();
 
     private:
         std::optional< NavMesh > m_lastLoadedNavMesh;
@@ -40,6 +41,8 @@ namespace Debugger
         Wow::ObjectManager  m_objectMgr;
         Wow::LuaState       m_lua;
     };
+
+    extern Debugger * GetDebugger();
 }
 
 #endif // Debugger_hpp__

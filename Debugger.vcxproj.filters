@@ -28,6 +28,9 @@
     <Filter Include="src\mmaps">
       <UniqueIdentifier>{6fe9a440-d1b1-4182-b5ce-39a66e88b70d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\math">
+      <UniqueIdentifier>{e59b793a-dfbc-41ca-a623-3eee41795f29}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="contrib\minhook\src\buffer.c">
@@ -122,6 +125,9 @@
     </ClInclude>
     <ClInclude Include="src\debugger\mmaps\NavMesh.hpp">
       <Filter>src\mmaps</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\math\Vector.hpp">
+      <Filter>src\math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

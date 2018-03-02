@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include "d3dx9math.h"
 
 namespace Debugger
 {
@@ -23,12 +24,16 @@ namespace Debugger
         return result;
     }
 
+    Debugger * g_debugger = nullptr;
+
     Debugger::Debugger( VTABLE_TYPE* vtable )
-        : m_renderer( vtable, this )
+        : m_renderer( vtable )
         , m_memory( GetCurrentProcess() )
         , m_lua( m_memory )
         , m_objectMgr( m_memory )
     {
+        g_debugger = this;
+
         m_lua.Execute( "AccountLoginAccountEdit:SetText('Root')" );
         m_lua.Execute( "AccountLoginPasswordEdit:SetText('Root')" );
         m_lua.Execute( "AccountLogin_Login()" );
@@ -120,56 +125,85 @@ namespace Debugger
         auto player = m_objectMgr.GetLocalPlayer();
         auto camera = m_objectMgr.GetCamera();
 
-        Wow::Location loc = player.GetLocation();
-
-        auto coord = m_renderer.GetScreenCoord( camera, loc );
-        if ( coord )
-        {
-            m_renderer.RenderQuad( coord->x, coord->y, 10.0f, 10.0f );
-        }
-
         uint32_t mapId = player.GetMapId();
+
+        Wow::Location loc = player.GetLocation();
         Vector2i tile = GetTileCoord( loc );
 
-        auto navMesh = LoadNavMesh( mapId, tile );
-        if ( navMesh )
+        LoadNavMesh( mapId, tile );
+    }
+
+    void Debugger::RenderNavMesh()
+    {
+        struct NavDetailTriangle
         {
+            uint8_t idx0;
+            uint8_t idx1;
+            uint8_t idx2;
+            uint8_t unk;
+        };
+
+        if ( m_lastLoadedNavMesh )
+        {
+            auto camera = m_objectMgr.GetCamera();
+
+            m_renderer.StartCustomRender();
+
+            auto navMesh = m_lastLoadedNavMesh;
+
+            NavMeshTile & tile = navMesh->tile;
+
             Vector3f * verts = reinterpret_cast< Vector3f * >( navMesh->tile.verts );
+            Vector3f * detailVerts = reinterpret_cast< Vector3f * >( navMesh->tile.detailVerts );
 
-            //for ( auto idx = 0u; idx < navMesh->tile.header->vertCount; ++idx )
-            //{
-            //    Wow::Location loc{ pos->z, pos->x, pos->y };
-
-            //    auto coord = m_renderer.GetScreenCoord( camera, loc );
-            //    if ( coord )
-            //    {
-            //        m_renderer.RenderQuad( coord->x, coord->y, 3.0f, 3.0f );
-            //    }
-
-            //    ++pos;
-            //}
-
-            NavMeshPoly * poly = reinterpret_cast< NavMeshPoly * >( navMesh->tile.polys );
-            for ( auto idx = 0u; idx < navMesh->tile.header->polyCount; ++idx )
+            for ( auto polyIdx = 0u; polyIdx < navMesh->tile.header->polyCount; ++polyIdx )
             {
-                for ( auto vertIdx = 0u; vertIdx < poly->vertCount - 1; ++vertIdx )
-                {
-                    auto vertIdx0 = poly->verts[ vertIdx ];
-                    auto vertIdx1 = poly->verts[ vertIdx + 1 ];
+                NavMeshPoly & poly = reinterpret_cast< NavMeshPoly * >( tile.polys )[ polyIdx ];
 
-                    Wow::Location loc0{ verts[ vertIdx0 ].z, verts[ vertIdx0 ].x, verts[ vertIdx0 ].y };
-                    Wow::Location loc1{ verts[ vertIdx1 ].z, verts[ vertIdx1 ].x, verts[ vertIdx1 ].y };
+                NavMeshPolyDetail & detail = reinterpret_cast< NavMeshPolyDetail * >( tile.detailMeshes )[ polyIdx ];
+                for ( auto triIdx = 0u; triIdx < detail.triCount; ++triIdx )
+                {
+                    NavDetailTriangle & triangle = reinterpret_cast< NavDetailTriangle * >( tile.detailTris )[ detail.triBase + triIdx ];
+
+                    uint8_t idx0 = triangle.idx0;
+                    uint8_t idx1 = triangle.idx1;
+                    uint8_t idx2 = triangle.idx2;
+
+                    Vector3f & v0 = idx0 < poly.vertCount ? verts[ poly.verts[ idx0 ] ] : detailVerts[ ( detail.vertBase + ( idx0 - poly.vertCount ) ) ];
+                    Vector3f & v1 = idx1 < poly.vertCount ? verts[ poly.verts[ idx1 ] ] : detailVerts[ ( detail.vertBase + ( idx1 - poly.vertCount ) ) ];
+                    Vector3f & v2 = idx2 < poly.vertCount ? verts[ poly.verts[ idx2 ] ] : detailVerts[ ( detail.vertBase + ( idx2 - poly.vertCount ) ) ];
+
+                    Wow::Location loc0{ v0.z, v0.x, v0.y };
+                    Wow::Location loc1{ v1.z, v1.x, v1.y };
+                    Wow::Location loc2{ v2.z, v2.x, v2.y };
 
                     auto coord0 = m_renderer.GetScreenCoord( camera, loc0 );
-                    auto coord1 = m_renderer.GetScreenCoord( camera, loc1 );
-                    if ( coord0 && coord1 )
-                    {
-                        m_renderer.RenderLine( *coord0, *coord1 );
-                    }
-                }
+                    if ( !coord0 )
+                        continue;
 
-                ++poly;
+                    auto coord1 = m_renderer.GetScreenCoord( camera, loc1 );
+                    if ( !coord1 )
+                        continue;
+
+                    auto coord2 = m_renderer.GetScreenCoord( camera, loc2 );
+                    if ( !coord2 )
+                        continue;
+
+                    m_renderer.RenderTriangle( *coord0, *coord1, *coord2, Colors::GreenAlpha );
+
+                    m_renderer.RenderLine( *coord0, *coord1, Colors::White );
+                    m_renderer.RenderLine( *coord1, *coord2, Colors::White );
+                    m_renderer.RenderLine( *coord2, *coord0, Colors::White );
+                }
             }
+
+            m_renderer.EndCustomRender();
         }
     }
+
+    extern Debugger * GetDebugger()
+    {
+        return g_debugger;
+    }
+
 }
