@@ -175,9 +175,9 @@ namespace Debugger
                     Vector3f & v1 = idx1 < poly.vertCount ? verts[ poly.verts[ idx1 ] ] : detailVerts[ ( detail.vertBase + ( idx1 - poly.vertCount ) ) ];
                     Vector3f & v2 = idx2 < poly.vertCount ? verts[ poly.verts[ idx2 ] ] : detailVerts[ ( detail.vertBase + ( idx2 - poly.vertCount ) ) ];
 
-                    Vector3f vv0{ v0.z, v0.x, v0.y + 0.6f };
-                    Vector3f vv1{ v1.z, v1.x, v1.y + 0.6f };
-                    Vector3f vv2{ v2.z, v2.x, v2.y + 0.6f };
+                    Vector3f vv0{ v0.z, v0.x, v0.y };
+                    Vector3f vv1{ v1.z, v1.x, v1.y };
+                    Vector3f vv2{ v2.z, v2.x, v2.y};
 
                     triangles.AddTriangle( vv0, vv1, vv2 );
 

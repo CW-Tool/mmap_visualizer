@@ -295,9 +295,10 @@ namespace Debugger
         device->SetVertexShader( nullptr );
         device->SetTexture( 0, nullptr );
 
-        //device->SetRenderState( D3DRS_DEPTHBIAS, -0.01f );
-        //device->SetRenderState( D3DRS_SLOPESCALEDEPTHBIAS, -1.0f );
-        device->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+        //device->SetRenderState( D3DRS_DEPTHBIAS, -10 );
+        //device->SetRenderState( D3DRS_SLOPESCALEDEPTHBIAS, 10 );
+        device->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
+        device->SetRenderState( D3DRS_FOGENABLE, TRUE );
         device->SetRenderState( D3DRS_ALPHATESTENABLE, FALSE );
         device->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
         device->SetRenderState( D3DRS_COLORVERTEX, TRUE );
