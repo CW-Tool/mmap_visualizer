@@ -2,17 +2,16 @@
 #define Renderer_hpp__
 
 #include "math/Vector.hpp"
+#include "wow_client/Camera.hpp"
 
 #include <windows.h>
 #include <d3d9.h>
+#include <d3dx9math.h>
 
 #include <optional>
-
-namespace Wow
-{
-    class Camera;
-    class Location;
-}
+#include <vector>
+#include <stack>
+#include <array>
 
 namespace Debugger
 {
@@ -26,6 +25,7 @@ namespace Debugger
     {
         using BeginScene = HRESULT( APIENTRY* )( IDirect3DDevice9* );
         using EndScene = HRESULT( APIENTRY* )( IDirect3DDevice9* );
+        using SetMaterial = HRESULT( APIENTRY* )( IDirect3DDevice9*, const D3DMATERIAL9* );
         using SetRenderState = HRESULT( APIENTRY* )( IDirect3DDevice9*, D3DRENDERSTATETYPE, DWORD );
         using SetDepthStencilSurface = HRESULT( APIENTRY* )( IDirect3DDevice9*, IDirect3DSurface9 * );
     }
@@ -35,8 +35,8 @@ namespace Debugger
         SetDepthStencilSurface      = 39,
         BeginScene                  = 41,
         EndScene                    = 42,
+        SetMaterial                 = 49,
         SetRenderState              = 57,
-        Max
     };
 
     using Color = uint32_t;
@@ -83,16 +83,68 @@ namespace Debugger
         TBlack			= D3DCOLOR_ARGB(180, 000, 000, 000)
     };
 
-    struct DeviceState
+    class Geometry
     {
-        IDirect3DBaseTexture9 * texture;
-        IDirect3DPixelShader9 * pixelShader;
-        IDirect3DSurface9     * depthStencil;
-        DWORD                   alphaBlend;
-        DWORD                   fvf;
-        D3DMATRIX               view;
-        D3DMATRIX               proj;
-        D3DMATRIX               world;
+    public:
+        struct Vertex
+        {
+            Vector3f Position;
+            Colors   Color;
+        };
+
+        enum Type
+        {
+            Line,
+            Triangle
+        };
+
+        Geometry( Colors color, Type type );
+
+        virtual void SetDeviceState( IDirect3DDevice9 * device ) const;
+        virtual void Render( IDirect3DDevice9* device ) const = 0;
+
+    protected:
+        std::vector< Vertex >   m_vertices;
+        Colors                  m_color;
+        Type                    m_type;
+    };
+
+    class TriangleGeometry : public Geometry
+    {
+    public:
+        TriangleGeometry( Colors color );
+
+        void            AddTriangle( const Vector3f & p0, const Vector3f & p1, const Vector3f & p2, std::optional< Colors > color = std::nullopt );
+        virtual void    Render( IDirect3DDevice9* device ) const override;
+    };
+
+    class LineGeometry : public Geometry
+    {
+    public:
+        LineGeometry( Colors color );
+
+        void         AddLine( const Vector3f & p0, const Vector3f & p1, std::optional< Colors > color = std::nullopt );
+        virtual void Render( IDirect3DDevice9* device ) const override;
+    };
+
+    struct DeviceContext
+    {
+        using RenderStates = std::array< DWORD, D3DRS_BLENDOPALPHA + 1 >;
+        using RenderTransforms = std::array< D3DXMATRIX, D3DTS_TEXTURE7 + 1 >;
+
+        struct DeviceState
+        {
+            IDirect3DPixelShader9 *  ps = nullptr;
+            IDirect3DVertexShader9 * vs = nullptr;
+            IDirect3DBaseTexture9 *  tex0 = nullptr;
+            DWORD                    fvf;
+            RenderStates             states;
+
+            RenderTransforms         transforms;
+        };
+
+        static void Store( IDirect3DDevice9* device, DeviceState & state );
+        static void Restore( IDirect3DDevice9* device, const DeviceState & state );
     };
 
     class Renderer
@@ -104,18 +156,14 @@ namespace Debugger
         void                        SetupDirectXHooks( VTABLE_TYPE* vtable );
 
         bool                        IsOnScreen( const Vector2f & coord );
-        std::optional< Vector2f >   GetScreenCoord( Wow::Camera & camera, Wow::Location & location );
+        std::optional< Vector2f >   GetScreenCoord( Wow::Camera & camera, const Vector3f & pos );
 
         void                        RenderQuad( float x, float y, float width, float height, Color color = Colors::White );
         void                        RenderTriangle( const Vector2f & p0, const Vector2f & p1, const Vector2f & p2, Color color = Colors::White );
         void                        RenderLine( const Vector2f & start, const Vector2f & end, Color color = Colors::White );
 
-        void                        StartCustomRender();
-        void                        EndCustomRender();
-
+        void                        RenderGeometry( const Geometry & g, std::optional< Wow::Camera > camera = std::nullopt );
     protected:
-        bool                        m_customRenderInProgress;
-        DeviceState                 m_state;
         IDirect3DDevice9 *          m_device;
     };
 

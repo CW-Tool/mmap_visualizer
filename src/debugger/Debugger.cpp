@@ -146,9 +146,6 @@ namespace Debugger
         if ( m_lastLoadedNavMesh )
         {
             auto camera = m_objectMgr.GetCamera();
-
-            m_renderer.StartCustomRender();
-
             auto navMesh = m_lastLoadedNavMesh;
 
             NavMeshTile & tile = navMesh->tile;
@@ -156,9 +153,14 @@ namespace Debugger
             Vector3f * verts = reinterpret_cast< Vector3f * >( navMesh->tile.verts );
             Vector3f * detailVerts = reinterpret_cast< Vector3f * >( navMesh->tile.detailVerts );
 
+            TriangleGeometry triangles( Colors::GreenAlpha );
+            LineGeometry lines( Colors::WhiteAlpha );
+
             for ( auto polyIdx = 0u; polyIdx < navMesh->tile.header->polyCount; ++polyIdx )
             {
                 NavMeshPoly & poly = reinterpret_cast< NavMeshPoly * >( tile.polys )[ polyIdx ];
+
+                auto polyType = poly.areaAndtype >> 6;
 
                 NavMeshPolyDetail & detail = reinterpret_cast< NavMeshPolyDetail * >( tile.detailMeshes )[ polyIdx ];
                 for ( auto triIdx = 0u; triIdx < detail.triCount; ++triIdx )
@@ -173,31 +175,20 @@ namespace Debugger
                     Vector3f & v1 = idx1 < poly.vertCount ? verts[ poly.verts[ idx1 ] ] : detailVerts[ ( detail.vertBase + ( idx1 - poly.vertCount ) ) ];
                     Vector3f & v2 = idx2 < poly.vertCount ? verts[ poly.verts[ idx2 ] ] : detailVerts[ ( detail.vertBase + ( idx2 - poly.vertCount ) ) ];
 
-                    Wow::Location loc0{ v0.z, v0.x, v0.y };
-                    Wow::Location loc1{ v1.z, v1.x, v1.y };
-                    Wow::Location loc2{ v2.z, v2.x, v2.y };
+                    Vector3f vv0{ v0.z, v0.x, v0.y + 0.6f };
+                    Vector3f vv1{ v1.z, v1.x, v1.y + 0.6f };
+                    Vector3f vv2{ v2.z, v2.x, v2.y + 0.6f };
 
-                    auto coord0 = m_renderer.GetScreenCoord( camera, loc0 );
-                    if ( !coord0 )
-                        continue;
+                    triangles.AddTriangle( vv0, vv1, vv2 );
 
-                    auto coord1 = m_renderer.GetScreenCoord( camera, loc1 );
-                    if ( !coord1 )
-                        continue;
-
-                    auto coord2 = m_renderer.GetScreenCoord( camera, loc2 );
-                    if ( !coord2 )
-                        continue;
-
-                    m_renderer.RenderTriangle( *coord0, *coord1, *coord2, Colors::GreenAlpha );
-
-                    m_renderer.RenderLine( *coord0, *coord1, Colors::White );
-                    m_renderer.RenderLine( *coord1, *coord2, Colors::White );
-                    m_renderer.RenderLine( *coord2, *coord0, Colors::White );
+                    lines.AddLine( vv0, vv1 );
+                    lines.AddLine( vv0, vv2 );
+                    lines.AddLine( vv1, vv2 );
                 }
             }
 
-            m_renderer.EndCustomRender();
+            m_renderer.RenderGeometry( triangles, camera );
+            m_renderer.RenderGeometry( lines, camera );
         }
     }
 

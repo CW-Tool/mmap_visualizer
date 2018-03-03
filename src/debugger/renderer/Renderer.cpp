@@ -22,7 +22,6 @@ namespace Debugger
     Renderer * g_renderer = nullptr;
 
     Renderer::Renderer( VTABLE_TYPE* vtable )
-        : m_customRenderInProgress( false )
     {
         g_renderer = this;
 
@@ -48,13 +47,13 @@ namespace Debugger
         return coord.x >= 0.0 && coord.y >= 0.0f && coord.x <= viewport.Width && coord.y <= viewport.Height;
     }
 
-    std::optional< Vector2f > Renderer::GetScreenCoord( Wow::Camera & camera, Wow::Location & location )
+    std::optional< Vector2f > Renderer::GetScreenCoord( Wow::Camera & camera, const Vector3f & location )
     {
         D3DXVECTOR3 pos( location.x, location.y, location.z );
 
         D3DVIEWPORT9 viewport;
         m_device->GetViewport( &viewport );
-        
+
         D3DXMATRIX proj;
         D3DXMatrixPerspectiveFovRH( &proj, camera.FieldOfView * 0.6f, camera.Aspect, camera.NearPlane, camera.FarPlane );
 
@@ -168,43 +167,38 @@ namespace Debugger
         }
     }
 
-    void Renderer::StartCustomRender()
+    void Renderer::RenderGeometry( const Geometry & g, std::optional< Wow::Camera > camera )
     {
-        if ( m_customRenderInProgress )
+        static DeviceContext::DeviceState s_state;
+        DeviceContext::Store( m_device, s_state );
+
+        if ( camera )
         {
-            std::terminate();
+            D3DXMATRIX proj;
+            D3DXMatrixPerspectiveFovRH( &proj, camera->FieldOfView * 0.6f, camera->Aspect, camera->NearPlane, camera->FarPlane );
+
+            auto camPos = camera->Position;
+            auto camDir = camera->GetForwardDir();
+            auto camUp = camera->GetUpDir();
+
+            D3DXVECTOR3 eye( camPos.x, camPos.y, camPos.z );
+            D3DXVECTOR3 at( eye.x + camDir.x, eye.y + camDir.y, eye.z + camDir.z );
+            D3DXVECTOR3 up( camUp.x, camUp.y, camUp.z );
+
+            D3DXMATRIX view;
+            D3DXMatrixLookAtRH( &view, &eye, &at, &up );
+
+            D3DXMATRIX world;
+            D3DXMatrixIdentity( &world );
+
+            m_device->SetTransform( D3DTS_PROJECTION, &proj );
+            m_device->SetTransform( D3DTS_VIEW, &view );
+            m_device->SetTransform( D3DTS_WORLD, &world );
         }
 
-        m_customRenderInProgress = true;
+        g.Render( m_device );
 
-        m_device->GetTexture( 0, &m_state.texture );
-        m_device->GetPixelShader( &m_state.pixelShader );
-        m_device->GetRenderState( D3DRS_ALPHABLENDENABLE, &m_state.alphaBlend );
-        m_device->GetFVF( &m_state.fvf );
-        m_device->GetTransform( D3DTS_VIEW, &m_state.view );
-        m_device->GetTransform( D3DTS_PROJECTION, &m_state.proj );
-        m_device->GetTransform( D3DTS_WORLD, &m_state.world );
-        m_device->GetDepthStencilSurface( &m_state.depthStencil );
-    }
-
-    void Renderer::EndCustomRender()
-    {
-        if ( !m_customRenderInProgress )
-        {
-            std::terminate();
-        }
-
-        m_device->SetTexture( 0, m_state.texture );
-        m_device->SetPixelShader( m_state.pixelShader );
-        m_device->SetRenderState( D3DRS_ALPHABLENDENABLE, m_state.alphaBlend );
-        m_device->SetFVF( m_state.fvf );
-
-        m_device->SetTransform( D3DTS_VIEW, &m_state.view );
-        m_device->SetTransform( D3DTS_PROJECTION, &m_state.proj );
-        m_device->SetTransform( D3DTS_WORLD, &m_state.world );
-        m_device->SetDepthStencilSurface( m_state.depthStencil );
-
-        m_customRenderInProgress = false;
+        DeviceContext::Restore( m_device, s_state );
     }
 
     template< class T, int VTABLE_IDX >
@@ -231,7 +225,7 @@ namespace Debugger
             return result;
         };
 
-        auto status = MH_CreateHook( vtable_ptr, hookBefore ? s_RealHookBefore : s_RealHookAfter , reinterpret_cast< void** >( &s_OrigFunc ) );
+        auto status = MH_CreateHook( vtable_ptr, hookBefore ? s_RealHookBefore : s_RealHookAfter, reinterpret_cast< void** >( &s_OrigFunc ) );
         if ( status != MH_OK )
         {
             std::terminate();
@@ -244,61 +238,38 @@ namespace Debugger
         }
     };
 
-    struct CustomRenderState
-    {
-        uint8_t             zFuncChangeCount = 0;
-        IDirect3DSurface9*  depthSurface = nullptr;
-
-    };
-
-    CustomRenderState g_state;
-
+    bool g_renderNavMesh = true;
     void Renderer::SetupDirectXHooks( VTABLE_TYPE* vtable )
     {
         CreateD3D9Hook< D3D9::BeginScene, VTable::BeginScene >( vtable, []( IDirect3DDevice9* pDevice ) -> HRESULT
         {
             GetRenderer()->m_device = pDevice;
 
-            g_state.zFuncChangeCount = 0;
-            g_state.depthSurface = nullptr;
-
             return S_OK;
         } );
 
         CreateD3D9Hook< D3D9::EndScene, VTable::EndScene >( vtable, []( IDirect3DDevice9* pDevice ) -> HRESULT
         {
+            g_renderNavMesh = true;
+
             auto debugger = GetDebugger();
             if ( debugger != nullptr )
             {
                 debugger->Update();
-
-                pDevice->SetRenderState( D3DRS_ZFUNC, D3DCMP_ALWAYS );
-                pDevice->SetDepthStencilSurface( g_state.depthSurface );
-
-                debugger->RenderNavMesh();
             }
 
             return S_OK;
         } );
 
-        CreateD3D9Hook< D3D9::SetDepthStencilSurface, VTable::SetDepthStencilSurface >( vtable, []( IDirect3DDevice9* pDevice, IDirect3DSurface9* surface ) -> HRESULT
+        CreateD3D9Hook< D3D9::SetRenderState, VTable::SetRenderState >( vtable, []( IDirect3DDevice9*, auto type, auto value)
         {
-            if ( g_state.zFuncChangeCount == 2 )
+            if ( type == D3DRS_ZWRITEENABLE && value == FALSE )
             {
-                g_state.depthSurface = surface;
-            }
-
-            return S_OK;
-        } );
-
-        CreateD3D9Hook< D3D9::SetRenderState, VTable::SetRenderState >( vtable, []( IDirect3DDevice9* pDevice, D3DRENDERSTATETYPE type, DWORD value ) -> HRESULT
-        {
-            switch ( type )
-            {
-                case D3DRS_ZFUNC:
+                auto debugger = GetDebugger();
+                if ( g_renderNavMesh && debugger != nullptr )
                 {
-                    ++g_state.zFuncChangeCount;
-                    break;
+                    g_renderNavMesh = false;
+                    debugger->RenderNavMesh();
                 }
             }
 
@@ -310,4 +281,110 @@ namespace Debugger
     {
         return g_renderer;
     }
+
+    Geometry::Geometry( Colors color, Type type )
+        : m_color( color )
+        , m_type( type )
+    {
+
+    }
+
+    void Geometry::SetDeviceState( IDirect3DDevice9 * device ) const
+    {
+        device->SetPixelShader( nullptr );
+        device->SetVertexShader( nullptr );
+        device->SetTexture( 0, nullptr );
+
+        //device->SetRenderState( D3DRS_DEPTHBIAS, -0.01f );
+        //device->SetRenderState( D3DRS_SLOPESCALEDEPTHBIAS, -1.0f );
+        device->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+        device->SetRenderState( D3DRS_ALPHATESTENABLE, FALSE );
+        device->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+        device->SetRenderState( D3DRS_COLORVERTEX, TRUE );
+        device->SetRenderState( D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_COLOR1 );
+        device->SetRenderState( D3DRS_SEPARATEALPHABLENDENABLE, FALSE );
+        device->SetRenderState( D3DRS_BLENDOP, D3DBLENDOP_ADD );
+        device->SetRenderState( D3DRS_SRCBLEND, D3DBLEND_SRCALPHA );
+        device->SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
+    }
+
+    TriangleGeometry::TriangleGeometry( Colors color )
+        : Geometry( color, Type::Triangle )
+    {
+        m_vertices.reserve( 200 );
+    }
+
+    void TriangleGeometry::AddTriangle( const Vector3f & p0, const Vector3f & p1, const Vector3f & p2, std::optional< Colors > color )
+    {
+        m_vertices.push_back( Vertex{ p0, color ? *color : m_color } );
+        m_vertices.push_back( Vertex{ p1, color ? *color : m_color } );
+        m_vertices.push_back( Vertex{ p2, color ? *color : m_color } );
+    }
+
+    void TriangleGeometry::Render( IDirect3DDevice9* device ) const
+    {
+        SetDeviceState( device );
+
+        device->SetFVF( D3DFVF_XYZ | D3DFVF_DIFFUSE );
+        device->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_vertices.size() / 3, m_vertices.data(), sizeof( Vertex ) );
+    }
+
+    LineGeometry::LineGeometry( Colors color )
+        : Geometry( color, Type::Line )
+    {
+        m_vertices.reserve( 200 );
+    }
+
+    void LineGeometry::AddLine( const Vector3f & p0, const Vector3f & p1, std::optional< Colors > color )
+    {
+        m_vertices.push_back( Vertex{ p0, color ? *color : m_color } );
+        m_vertices.push_back( Vertex{ p1, color ? *color : m_color } );
+    }
+
+    void LineGeometry::Render( IDirect3DDevice9* device ) const
+    {
+        SetDeviceState( device );
+
+        device->SetFVF( D3DFVF_XYZ | D3DFVF_DIFFUSE );
+        device->DrawPrimitiveUP( D3DPT_LINELIST, m_vertices.size() / 2, m_vertices.data(), sizeof( Vertex ) );
+    }
+
+    void DeviceContext::Store( IDirect3DDevice9* device, DeviceState & state )
+    {
+        device->GetPixelShader( &state.ps );
+        device->GetVertexShader( &state.vs );
+        device->GetTexture( 0, &state.tex0 );
+
+        for ( auto idx = 0; idx < state.states.size(); ++idx )
+        {
+            device->GetRenderState( D3DRENDERSTATETYPE( idx ), &state.states[ idx ] );
+        }
+
+        for ( auto idx = 0; idx < state.transforms.size(); ++idx )
+        {
+            device->GetTransform( D3DTRANSFORMSTATETYPE( idx ), &state.transforms[ idx ] );
+        }
+
+        device->GetFVF( &state.fvf );
+    }
+
+    void DeviceContext::Restore( IDirect3DDevice9* device, const DeviceState & state )
+    {
+        device->SetPixelShader( state.ps );
+        device->SetVertexShader( state.vs );
+        device->SetTexture( 0, state.tex0 );
+
+        for ( auto idx = 0; idx < state.states.size(); ++idx )
+        {
+            device->SetRenderState( D3DRENDERSTATETYPE( idx ), state.states[ idx ] );
+        }
+
+        for ( auto idx = 0; idx < state.transforms.size(); ++idx )
+        {
+            device->SetTransform( D3DTRANSFORMSTATETYPE( idx ), &state.transforms[ idx ] );
+        }
+
+        device->SetFVF( state.fvf );
+    }
+
 }
