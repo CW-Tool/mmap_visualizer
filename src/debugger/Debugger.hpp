@@ -22,6 +22,20 @@ namespace Debugger
         NavMeshTile tile;
     };
 
+    class LuaFrame
+    {
+    public:
+        LuaFrame( ProcessMemory & memory );
+
+        bool           IsOpen() const { return m_isOpen; }
+        void           Open();
+        void           Close();
+
+    protected:
+        bool           m_isOpen;
+        Wow::LuaState  m_lua;
+    };
+
     class Debugger
     {
     public:
@@ -39,7 +53,6 @@ namespace Debugger
         ProcessMemory       m_memory;
 
         Wow::ObjectManager  m_objectMgr;
-        Wow::LuaState       m_lua;
     };
 
     extern Debugger * GetDebugger();

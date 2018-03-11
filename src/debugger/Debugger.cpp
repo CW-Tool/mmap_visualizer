@@ -29,14 +29,14 @@ namespace Debugger
     Debugger::Debugger( VTABLE_TYPE* vtable )
         : m_renderer( vtable )
         , m_memory( GetCurrentProcess() )
-        , m_lua( m_memory )
         , m_objectMgr( m_memory )
     {
         g_debugger = this;
 
-        m_lua.Execute( "AccountLoginAccountEdit:SetText('Root')" );
-        m_lua.Execute( "AccountLoginPasswordEdit:SetText('Root')" );
-        m_lua.Execute( "AccountLogin_Login()" );
+        Wow::LuaState lua( m_memory );
+        lua.Execute( "AccountLoginAccountEdit:SetText('Root')" );
+        lua.Execute( "AccountLoginPasswordEdit:SetText('Root')" );
+        lua.Execute( "AccountLogin_Login()" );
     }
 
     inline int dtAlign4( int x )
@@ -122,6 +122,12 @@ namespace Debugger
         if ( !m_objectMgr.IsInWorld() )
             return;
 
+        static LuaFrame s_frame( m_memory );
+        if ( !s_frame.IsOpen() )
+        {
+            s_frame.Open();
+        }
+
         auto player = m_objectMgr.GetLocalPlayer();
         auto camera = m_objectMgr.GetCamera();
 
@@ -197,4 +203,31 @@ namespace Debugger
         return g_debugger;
     }
 
+    LuaFrame::LuaFrame( ProcessMemory & memory )
+        : m_lua( memory )
+        , m_isOpen( false )
+    {
+        m_lua.Execute( R"(
+            StaticPopupDialogs["DEBUGGER_DIALOG"] =
+            {
+                text = "SunwellVisualDebugger is present!",
+                button1 = "Ok",
+                timeout = 0,
+                whileDead = true,
+                hideOnEscape = true,
+                preferredIndex = 3
+            })" );
+    }
+
+    void LuaFrame::Open()
+    {
+        m_lua.Execute( R"(StaticPopup_Show ("DEBUGGER_DIALOG"))" );
+
+        m_isOpen = true;
+    }
+
+    void LuaFrame::Close()
+    {
+
+    }
 }
