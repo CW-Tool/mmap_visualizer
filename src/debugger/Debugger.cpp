@@ -49,7 +49,7 @@ namespace Debugger
         if ( m_lastLoadedNavMesh && m_lastLoadedNavMesh->mapId == mapId && m_lastLoadedNavMesh->coord.x == coord.x && m_lastLoadedNavMesh->coord.y == coord.y )
             return m_lastLoadedNavMesh;
 
-        std::ifstream file( Format( "F:\\emu_data\\mmaps\\%03u%02u%02u.mmtile", mapId, coord.x, coord.y ), std::ios::in | std::ios::binary );
+        std::ifstream file( Format( "F:\\Sunwell\\emu_data\\mmaps\\%03u%02u%02u.mmtile", mapId, coord.x, coord.y ), std::ios::in | std::ios::binary );
         if ( !file.is_open() )
             return std::nullopt;
 
@@ -156,7 +156,7 @@ namespace Debugger
             TriangleGeometry triangles( Colors::GreenAlpha );
             LineGeometry lines( Colors::WhiteAlpha );
 
-            for ( auto polyIdx = 0u; polyIdx < navMesh->tile.header->polyCount; ++polyIdx )
+            for ( auto polyIdx = 0u; polyIdx < navMesh->tile.header->detailMeshCount; ++polyIdx )
             {
                 NavMeshPoly & poly = reinterpret_cast< NavMeshPoly * >( tile.polys )[ polyIdx ];
 

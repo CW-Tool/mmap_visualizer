@@ -238,7 +238,8 @@ namespace Debugger
         }
     };
 
-    bool g_renderNavMesh = true;
+    uint8_t g_renderNavMesh = 0u;
+    
     void Renderer::SetupDirectXHooks( VTABLE_TYPE* vtable )
     {
         CreateD3D9Hook< D3D9::BeginScene, VTable::BeginScene >( vtable, []( IDirect3DDevice9* pDevice ) -> HRESULT
@@ -250,7 +251,7 @@ namespace Debugger
 
         CreateD3D9Hook< D3D9::EndScene, VTable::EndScene >( vtable, []( IDirect3DDevice9* pDevice ) -> HRESULT
         {
-            g_renderNavMesh = true;
+            g_renderNavMesh = 0u;
 
             auto debugger = GetDebugger();
             if ( debugger != nullptr )
@@ -263,15 +264,33 @@ namespace Debugger
 
         CreateD3D9Hook< D3D9::SetRenderState, VTable::SetRenderState >( vtable, []( IDirect3DDevice9*, auto type, auto value)
         {
-            if ( type == D3DRS_ZWRITEENABLE && value == FALSE )
+            const uint8_t STATE_COUNTER = 1;
+
+            if ( type == D3DRS_LIGHTING && value == FALSE )
             {
+                ++g_renderNavMesh;
+
                 auto debugger = GetDebugger();
-                if ( g_renderNavMesh && debugger != nullptr )
+                if ( g_renderNavMesh == STATE_COUNTER && debugger != nullptr )
                 {
-                    g_renderNavMesh = false;
                     debugger->RenderNavMesh();
                 }
             }
+
+            return S_OK;
+        } );
+
+        CreateD3D9Hook< D3D9::SetViewport, VTable::SetViewport >( vtable, []( IDirect3DDevice9* pDevice, D3DVIEWPORT9* viewport ) -> HRESULT
+        {
+            //const uint8_t STATE_COUNTER = 4;
+
+            //++g_renderNavMesh;
+
+            //auto debugger = GetDebugger();
+            //if ( g_renderNavMesh == STATE_COUNTER && debugger != nullptr )
+            //{
+            //    debugger->RenderNavMesh();
+            //    }
 
             return S_OK;
         } );
