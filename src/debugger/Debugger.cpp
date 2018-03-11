@@ -65,7 +65,7 @@ namespace Debugger
 
         file.read( reinterpret_cast< char * >( &data[ 0 ] ), tileHeader.size );
 
-        auto header = (NavMeshHeader*)&data[0];
+        auto header = ( NavMeshHeader* )&data[ 0 ];
         const int headerSize = dtAlign4( sizeof( NavMeshHeader ) );
         const int vertsSize = dtAlign4( sizeof( NavMeshVert ) * header->vertCount );
         const int polysSize = dtAlign4( sizeof( NavMeshPoly )*header->polyCount );
@@ -76,7 +76,7 @@ namespace Debugger
         const int bvtreeSize = dtAlign4( sizeof( NavMeshBVNode )*header->bvNodeCount );
         const int offMeshLinksSize = dtAlign4( sizeof( NavMeshOffMeshConnection )*header->offMeshConCount );
 
-        unsigned char* d = &data[0] + headerSize;
+        unsigned char* d = &data[ 0 ] + headerSize;
         tile.verts = ( float* )d; d += vertsSize;
         tile.polys = ( NavMeshPoly* )d; d += polysSize;
         tile.links = ( NavMeshLink* )d; d += linksSize;
@@ -94,7 +94,7 @@ namespace Debugger
 
         // Init tile.
         tile.header = header;
-        tile.data = &data[0];
+        tile.data = &data[ 0 ];
         tile.dataSize = data.size();
         tile.flags = 0;
 
@@ -103,8 +103,8 @@ namespace Debugger
 
     Vector2i GetTileCoord( Wow::Location & loc )
     {
-        const float     SIZE_OF_GRIDS       = 533.0f;
-        const float     CENTER_GRID_OFFSET  = SIZE_OF_GRIDS / 2.0f;
+        const float     SIZE_OF_GRIDS = 533.0f;
+        const float     CENTER_GRID_OFFSET = SIZE_OF_GRIDS / 2.0f;
         const uint32_t  MAX_NUMBER_OF_GRIDS = 64;
 
         double x_offset = ( double( loc.x ) - CENTER_GRID_OFFSET ) / SIZE_OF_GRIDS;
@@ -183,7 +183,7 @@ namespace Debugger
 
                     Vector3f vv0{ v0.z, v0.x, v0.y };
                     Vector3f vv1{ v1.z, v1.x, v1.y };
-                    Vector3f vv2{ v2.z, v2.x, v2.y};
+                    Vector3f vv2{ v2.z, v2.x, v2.y };
 
                     triangles.AddTriangle( vv0, vv1, vv2 );
 
@@ -208,20 +208,43 @@ namespace Debugger
         , m_isOpen( false )
     {
         m_lua.Execute( R"(
-            StaticPopupDialogs["DEBUGGER_DIALOG"] =
-            {
-                text = "SunwellVisualDebugger is present!",
-                button1 = "Ok",
-                timeout = 0,
-                whileDead = true,
-                hideOnEscape = true,
-                preferredIndex = 3
-            })" );
+                            DebuggerFrame = CreateFrame("Frame", "DebuggerFrame", UIParent)
+
+                            local DebuggerFrameBackdrop =
+                            {
+	                            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",  
+	                            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+	                            tile = true,
+	                            tileSize = 32,
+	                            edgeSize = 32,
+	                            insets = {left = 11, right = 12, top = 12, bottom = 11}
+                            }
+                            DebuggerFrame:SetHeight(250)
+                            DebuggerFrame:SetWidth(250)
+                            DebuggerFrame:SetPoint("LEFT",0,0)
+                            DebuggerFrame:SetBackdrop(DebuggerFrameBackdrop)
+
+                            local DebuggerFrameFontString = DebuggerFrame:CreateFontString("DebuggerFrameFontString", "BACKGROUND")
+                            DebuggerFrameFontString:SetHeight(200)
+                            DebuggerFrameFontString:SetWidth(200)
+                            DebuggerFrameFontString:SetPoint("CENTER", "DebuggerFrame", 0, 60)
+                            DebuggerFrameFontString:SetFontObject("GameFontNormal")
+                            DebuggerFrameFontString:SetText("DEBUGGER FRAME")
+
+                            local DebuggerFrameButton = CreateFrame("Button", "DebuggerFrameButton", DebuggerFrame, "UIPanelButtonTemplate") -- Parent the button to the main frame
+                            DebuggerFrameButton:SetPoint("CENTER", 0, -80)
+                            DebuggerFrameButton:SetWidth(80)
+                            DebuggerFrameButton:SetHeight(22)
+                            DebuggerFrameButton:SetText("Close")
+
+                            DebuggerFrameButton:RegisterForClicks("LeftButtonDown")
+                            DebuggerFrameButton:SetScript("PostClick", function(self, button,down) DebuggerFrame:Hide() end)
+                    )" );
     }
 
     void LuaFrame::Open()
     {
-        m_lua.Execute( R"(StaticPopup_Show ("DEBUGGER_DIALOG"))" );
+        m_lua.Execute( R"( DebuggerFrame:Show() )" );
 
         m_isOpen = true;
     }
