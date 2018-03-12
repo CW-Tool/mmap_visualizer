@@ -26,6 +26,7 @@
     <ClCompile Include="contrib\minhook\src\trampoline.c" />
     <ClCompile Include="src\debugger\Debugger.cpp" />
     <ClCompile Include="src\debugger\main.cpp" />
+    <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp" />
     <ClCompile Include="src\debugger\renderer\Renderer.cpp" />
     <ClCompile Include="src\debugger\wow_client\Camera.cpp" />
     <ClCompile Include="src\debugger\wow_client\lua\LuaState.cpp" />
@@ -45,7 +46,9 @@
     <ClInclude Include="src\debugger\math\Vector.hpp" />
     <ClInclude Include="src\debugger\memory\ProcessMemory.hpp" />
     <ClInclude Include="src\debugger\mmaps\NavMesh.hpp" />
+    <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp" />
     <ClInclude Include="src\debugger\renderer\Renderer.hpp" />
+    <ClInclude Include="src\debugger\utils\String.hpp" />
     <ClInclude Include="src\debugger\wow_client\Camera.hpp" />
     <ClInclude Include="src\debugger\wow_client\Location.hpp" />
     <ClInclude Include="src\debugger\wow_client\lua\LuaState.hpp" />

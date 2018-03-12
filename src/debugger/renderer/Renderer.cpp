@@ -167,33 +167,17 @@ namespace Debugger
         }
     }
 
-    void Renderer::RenderGeometry( const Geometry & g, std::optional< Wow::Camera > camera )
+    void Renderer::RenderGeometry( const Geometry & g, std::optional< Transform* > transform )
     {
         static DeviceContext::DeviceState s_state;
         DeviceContext::Store( m_device, s_state );
 
-        if ( camera )
+        if ( transform )
         {
-            D3DXMATRIX proj;
-            D3DXMatrixPerspectiveFovRH( &proj, camera->FieldOfView * 0.6f, camera->Aspect, camera->NearPlane, camera->FarPlane );
 
-            auto camPos = camera->Position;
-            auto camDir = camera->GetForwardDir();
-            auto camUp = camera->GetUpDir();
-
-            D3DXVECTOR3 eye( camPos.x, camPos.y, camPos.z );
-            D3DXVECTOR3 at( eye.x + camDir.x, eye.y + camDir.y, eye.z + camDir.z );
-            D3DXVECTOR3 up( camUp.x, camUp.y, camUp.z );
-
-            D3DXMATRIX view;
-            D3DXMatrixLookAtRH( &view, &eye, &at, &up );
-
-            D3DXMATRIX world;
-            D3DXMatrixIdentity( &world );
-
-            m_device->SetTransform( D3DTS_PROJECTION, &proj );
-            m_device->SetTransform( D3DTS_VIEW, &view );
-            m_device->SetTransform( D3DTS_WORLD, &world );
+            m_device->SetTransform( D3DTS_WORLD, &( *transform )->world );
+            m_device->SetTransform( D3DTS_VIEW, &( *transform )->view );
+            m_device->SetTransform( D3DTS_PROJECTION, &( *transform )->proj );
         }
 
         g.Render( m_device );
@@ -239,19 +223,13 @@ namespace Debugger
     };
 
     uint8_t g_renderNavMesh = 0u;
-    
+
     void Renderer::SetupDirectXHooks( VTABLE_TYPE* vtable )
     {
         CreateD3D9Hook< D3D9::BeginScene, VTable::BeginScene >( vtable, []( IDirect3DDevice9* pDevice ) -> HRESULT
         {
-            GetRenderer()->m_device = pDevice;
-
-            return S_OK;
-        } );
-
-        CreateD3D9Hook< D3D9::EndScene, VTable::EndScene >( vtable, []( IDirect3DDevice9* pDevice ) -> HRESULT
-        {
             g_renderNavMesh = 0u;
+            GetRenderer()->m_device = pDevice;
 
             auto debugger = GetDebugger();
             if ( debugger != nullptr )
@@ -262,7 +240,7 @@ namespace Debugger
             return S_OK;
         } );
 
-        CreateD3D9Hook< D3D9::SetRenderState, VTable::SetRenderState >( vtable, []( IDirect3DDevice9*, auto type, auto value)
+        CreateD3D9Hook< D3D9::SetRenderState, VTable::SetRenderState >( vtable, []( IDirect3DDevice9*, auto type, auto value )
         {
             const uint8_t STATE_COUNTER = 1;
 
@@ -273,24 +251,9 @@ namespace Debugger
                 auto debugger = GetDebugger();
                 if ( g_renderNavMesh == STATE_COUNTER && debugger != nullptr )
                 {
-                    debugger->RenderNavMesh();
+                    debugger->Render();
                 }
             }
-
-            return S_OK;
-        } );
-
-        CreateD3D9Hook< D3D9::SetViewport, VTable::SetViewport >( vtable, []( IDirect3DDevice9* pDevice, D3DVIEWPORT9* viewport ) -> HRESULT
-        {
-            //const uint8_t STATE_COUNTER = 4;
-
-            //++g_renderNavMesh;
-
-            //auto debugger = GetDebugger();
-            //if ( g_renderNavMesh == STATE_COUNTER && debugger != nullptr )
-            //{
-            //    debugger->RenderNavMesh();
-            //    }
 
             return S_OK;
         } );
@@ -314,18 +277,30 @@ namespace Debugger
         device->SetVertexShader( nullptr );
         device->SetTexture( 0, nullptr );
 
-        //device->SetRenderState( D3DRS_DEPTHBIAS, -10 );
-        //device->SetRenderState( D3DRS_SLOPESCALEDEPTHBIAS, 10 );
-        device->SetRenderState( D3DRS_ZWRITEENABLE, TRUE );
-        device->SetRenderState( D3DRS_FOGENABLE, TRUE );
+        device->SetRenderState( D3DRS_ZWRITEENABLE, FALSE );
+        device->SetRenderState( D3DRS_ZFUNC, D3DCMP_LESSEQUAL );
+        device->SetRenderState( D3DRS_STENCILENABLE, FALSE );
+
         device->SetRenderState( D3DRS_ALPHATESTENABLE, FALSE );
-        device->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
+        device->SetRenderState( D3DRS_FOGENABLE, TRUE );
+        device->SetRenderState( D3DRS_LIGHTING, FALSE );
+        device->SetRenderState( D3DRS_AMBIENT, 0x0000 );
+
         device->SetRenderState( D3DRS_COLORVERTEX, TRUE );
         device->SetRenderState( D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_COLOR1 );
+        device->SetRenderState( D3DRS_SPECULARMATERIALSOURCE, D3DMCS_COLOR1 );
+        device->SetRenderState( D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_COLOR1 );
+        device->SetRenderState( D3DRS_EMISSIVEMATERIALSOURCE, D3DMCS_COLOR1 );
+
+        device->SetRenderState( D3DRS_ALPHABLENDENABLE, TRUE );
         device->SetRenderState( D3DRS_SEPARATEALPHABLENDENABLE, FALSE );
         device->SetRenderState( D3DRS_BLENDOP, D3DBLENDOP_ADD );
         device->SetRenderState( D3DRS_SRCBLEND, D3DBLEND_SRCALPHA );
         device->SetRenderState( D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA );
+        device->SetRenderState( D3DRS_TEXTUREFACTOR, 0xFFFFFFFF );
+        device->SetRenderState( D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_ALPHA | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED );
+        device->SetRenderState( D3DRS_ANTIALIASEDLINEENABLE, TRUE );
+        device->SetRenderState( D3DRS_BLENDFACTOR, 0xffffffff );
     }
 
     TriangleGeometry::TriangleGeometry( Colors color )
@@ -407,4 +382,23 @@ namespace Debugger
         device->SetFVF( state.fvf );
     }
 
+    Transform Transform::FromCamera( const Wow::Camera & camera )
+    {
+        Transform result;
+
+        D3DXMatrixPerspectiveFovRH( &result.proj, camera.FieldOfView * 0.6f, camera.Aspect, camera.NearPlane, camera.FarPlane );
+
+        auto camPos = camera.Position;
+        auto camDir = camera.GetForwardDir();
+        auto camUp = camera.GetUpDir();
+
+        D3DXVECTOR3 eye( camPos.x, camPos.y, camPos.z );
+        D3DXVECTOR3 at( eye.x + camDir.x, eye.y + camDir.y, eye.z + camDir.z );
+        D3DXVECTOR3 up( camUp.x, camUp.y, camUp.z );
+
+        D3DXMatrixLookAtRH( &result.view, &eye, &at, &up );
+        D3DXMatrixIdentity( &result.world );
+
+        return result;
+    }
 }

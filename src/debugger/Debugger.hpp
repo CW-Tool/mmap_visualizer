@@ -3,7 +3,7 @@
 
 #include "memory/ProcessMemory.hpp"
 #include "renderer/Renderer.hpp"
-#include "mmaps/NavMesh.hpp"
+#include "mmaps/NavMeshDebugger.hpp"
 
 #include "wow_client/lua/LuaState.hpp"
 #include "wow_client/objects/ObjectManager.hpp"
@@ -13,15 +13,6 @@
 
 namespace Debugger
 {
-    struct NavMesh
-    {
-        uint32_t mapId;
-        Vector2i coord;
-
-        std::vector< uint8_t > data;
-        NavMeshTile tile;
-    };
-
     class LuaFrame
     {
     public:
@@ -36,22 +27,24 @@ namespace Debugger
         Wow::LuaState  m_lua;
     };
 
+    Vector2i GetTileCoord( Wow::Location & loc );
+
     class Debugger
     {
     public:
         Debugger( VTABLE_TYPE* vtable );
 
-        std::optional< NavMesh >    LoadNavMesh( uint32_t mapId, const Vector2i & coord );
-
         void                        Update();
-        void                        RenderNavMesh();
+        void                        Render();
+
+        Wow::ObjectManager &        GetObjectMgr();
 
     private:
-        std::optional< NavMesh > m_lastLoadedNavMesh;
 
         Renderer            m_renderer;
         ProcessMemory       m_memory;
 
+        NavMeshDebugger     m_navDebugger;
         Wow::ObjectManager  m_objectMgr;
     };
 

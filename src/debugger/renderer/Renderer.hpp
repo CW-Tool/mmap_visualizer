@@ -228,6 +228,8 @@ namespace Debugger
         virtual void SetDeviceState( IDirect3DDevice9 * device ) const;
         virtual void Render( IDirect3DDevice9* device ) const = 0;
 
+        void         Clear()   { m_vertices.clear(); }
+
     protected:
         std::vector< Vertex >   m_vertices;
         Colors                  m_color;
@@ -248,8 +250,8 @@ namespace Debugger
     public:
         LineGeometry( Colors color );
 
-        void         AddLine( const Vector3f & p0, const Vector3f & p1, std::optional< Colors > color = std::nullopt );
-        virtual void Render( IDirect3DDevice9* device ) const override;
+        void            AddLine( const Vector3f & p0, const Vector3f & p1, std::optional< Colors > color = std::nullopt );
+        virtual void    Render( IDirect3DDevice9* device ) const override;
     };
 
     struct DeviceContext
@@ -272,6 +274,15 @@ namespace Debugger
         static void Restore( IDirect3DDevice9* device, const DeviceState & state );
     };
 
+    struct Transform
+    {
+        D3DXMATRIX world;
+        D3DXMATRIX view;
+        D3DXMATRIX proj;
+
+        static Transform FromCamera( const Wow::Camera & camera );
+    };
+
     class Renderer
     {
     public:
@@ -287,7 +298,7 @@ namespace Debugger
         void                        RenderTriangle( const Vector2f & p0, const Vector2f & p1, const Vector2f & p2, Color color = Colors::White );
         void                        RenderLine( const Vector2f & start, const Vector2f & end, Color color = Colors::White );
 
-        void                        RenderGeometry( const Geometry & g, std::optional< Wow::Camera > camera = std::nullopt );
+        void                        RenderGeometry( const Geometry & g, std::optional< Transform* > transform = std::nullopt );
     protected:
         IDirect3DDevice9 *          m_device;
     };

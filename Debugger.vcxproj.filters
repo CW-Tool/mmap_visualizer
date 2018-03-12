@@ -31,6 +31,9 @@
     <Filter Include="src\math">
       <UniqueIdentifier>{e59b793a-dfbc-41ca-a623-3eee41795f29}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\utils">
+      <UniqueIdentifier>{5017c277-b99c-4646-9082-912867944abb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="contrib\minhook\src\buffer.c">
@@ -70,6 +73,7 @@
       <Filter>src\wow_client\objects</Filter>
     </ClCompile>
     <ClCompile Include="src\debugger\wow_client\Camera.cpp" />
+    <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\debugger\renderer\Renderer.hpp">
@@ -128,6 +132,10 @@
     </ClInclude>
     <ClInclude Include="src\debugger\math\Vector.hpp">
       <Filter>src\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp" />
+    <ClInclude Include="src\debugger\utils\String.hpp">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
