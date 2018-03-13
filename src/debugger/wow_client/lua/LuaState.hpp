@@ -4,6 +4,9 @@
 #include "memory/ProcessMemory.hpp"
 
 #include <string>
+#include <vector>
+#include <variant>
+#include <optional>
 
 namespace Wow
 {
@@ -48,20 +51,25 @@ namespace Wow
     using lua_toboolean   = int( __cdecl * )( lua_State *L, int index );
     using lua_type        = int( __cdecl * )( lua_State *L, int index );
 
+    using LuaReturnType = std::variant< std::string, bool, double >;
+    using LuaReturnValues = std::optional< std::vector< LuaReturnType > >;
+
     class LuaState
     {
     public:
         LuaState( Debugger::ProcessMemory & memory );
 
-        void Execute( const std::string & script );
+        LuaReturnValues Execute( const std::string & script );
 
     protected:
+        void            lua_pop( lua_State * state, int n );
+
         lua_State*      m_state;
 
         luaL_loadbuffer m_loadBuffer;
         luaL_dostring   m_doString;
 
-        lua_gettop      m_getTop;
+        lua_gettop        m_getTop;
         lua_settop      m_setTop;
         lua_pcall       m_pcall;
         lua_tostring    m_toString;

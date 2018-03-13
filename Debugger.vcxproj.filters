@@ -34,23 +34,11 @@
     <Filter Include="src\utils">
       <UniqueIdentifier>{5017c277-b99c-4646-9082-912867944abb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="contrib\minhook">
+      <UniqueIdentifier>{f59b9810-db41-4ca1-9cd3-223c651cc05d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="contrib\minhook\src\buffer.c">
-      <Filter>contrib</Filter>
-    </ClCompile>
-    <ClCompile Include="contrib\minhook\src\hook.c">
-      <Filter>contrib</Filter>
-    </ClCompile>
-    <ClCompile Include="contrib\minhook\src\trampoline.c">
-      <Filter>contrib</Filter>
-    </ClCompile>
-    <ClCompile Include="contrib\minhook\src\HDE\hde32.c">
-      <Filter>contrib</Filter>
-    </ClCompile>
-    <ClCompile Include="contrib\minhook\src\HDE\hde64.c">
-      <Filter>contrib</Filter>
-    </ClCompile>
     <ClCompile Include="src\debugger\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -72,33 +60,31 @@
     <ClCompile Include="src\debugger\wow_client\objects\Player.cpp">
       <Filter>src\wow_client\objects</Filter>
     </ClCompile>
-    <ClCompile Include="src\debugger\wow_client\Camera.cpp" />
-    <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp" />
+    <ClCompile Include="contrib\minhook\src\buffer.c">
+      <Filter>contrib\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\minhook\src\HDE\hde32.c">
+      <Filter>contrib\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\minhook\src\HDE\hde64.c">
+      <Filter>contrib\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\minhook\src\hook.c">
+      <Filter>contrib\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\minhook\src\trampoline.c">
+      <Filter>contrib\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\wow_client\Camera.cpp">
+      <Filter>src\wow_client</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\debugger\renderer\Renderer.hpp">
       <Filter>src\renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="contrib\minhook\src\buffer.h">
-      <Filter>contrib</Filter>
-    </ClInclude>
-    <ClInclude Include="contrib\minhook\src\trampoline.h">
-      <Filter>contrib</Filter>
-    </ClInclude>
-    <ClInclude Include="contrib\minhook\src\HDE\hde32.h">
-      <Filter>contrib</Filter>
-    </ClInclude>
-    <ClInclude Include="contrib\minhook\src\HDE\hde64.h">
-      <Filter>contrib</Filter>
-    </ClInclude>
-    <ClInclude Include="contrib\minhook\src\HDE\pstdint.h">
-      <Filter>contrib</Filter>
-    </ClInclude>
-    <ClInclude Include="contrib\minhook\src\HDE\table32.h">
-      <Filter>contrib</Filter>
-    </ClInclude>
-    <ClInclude Include="contrib\minhook\src\HDE\table64.h">
-      <Filter>contrib</Filter>
     </ClInclude>
     <ClInclude Include="src\debugger\wow_client\Camera.hpp">
       <Filter>src\wow_client</Filter>
@@ -133,9 +119,32 @@
     <ClInclude Include="src\debugger\math\Vector.hpp">
       <Filter>src\math</Filter>
     </ClInclude>
-    <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp" />
     <ClInclude Include="src\debugger\utils\String.hpp">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\buffer.h">
+      <Filter>contrib\minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\hde32.h">
+      <Filter>contrib\minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\hde64.h">
+      <Filter>contrib\minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\pstdint.h">
+      <Filter>contrib\minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\table32.h">
+      <Filter>contrib\minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\HDE\table64.h">
+      <Filter>contrib\minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\minhook\src\trampoline.h">
+      <Filter>contrib\minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

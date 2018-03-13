@@ -18,7 +18,12 @@ namespace Wow
         m_toBoolean = reinterpret_cast< lua_toboolean >( LuaOffsets::F_ToBoolean );
     }
 
-    void LuaState::Execute( const std::string & script )
+    void LuaState::lua_pop( lua_State * state, int n )
+    {
+        m_setTop( state, -( n )-1 );
+    }
+
+    LuaReturnValues LuaState::Execute( const std::string & script )
     {
         int top = m_getTop( m_state );
 
@@ -26,16 +31,48 @@ namespace Wow
 
         //! #TODO: handle error
         if ( status != 0 )
-            return;
+            return std::nullopt;
 
-        status = m_pcall( m_state, 0, 0, 0 );
+        status = m_pcall( m_state, 0, -1, 0 );
 
         //! #TODO: handle error
         if ( status != 0 )
-            return;
+            return std::nullopt;
 
         //!#TODO: handle return values
         int returnCount = m_getTop( m_state ) - top;
-        m_setTop( m_state, top );
+
+        LuaReturnValues result;
+        
+        auto & data = result.emplace();
+        for ( auto idx = 0u; idx < returnCount; ++idx )
+        {
+            LuaType type = static_cast< LuaType >( m_type( m_state, -1 ) );
+            switch ( type )
+            {
+                case LuaType::LUA_TBOOLEAN:
+                {
+                    data.push_back( m_toBoolean( m_state, -1 ) != 0 );
+                    break;
+                }
+                case LuaType::LUA_TNUMBER:
+                {
+                    data.push_back( m_toNumber( m_state, -1 ) );
+                    break;
+                }
+                case LuaType::LUA_TSTRING:
+                {
+                    data.push_back( m_toString( m_state, -1 ) );
+                    break;
+                }
+                default:
+                    break;
+            }
+
+            lua_pop( m_state, 1 );
+        }
+
+        //m_setTop( m_state, top );
+        return result;
     }
 }

@@ -16,7 +16,18 @@ namespace Debugger
     }
 
     NavMeshDebugger::NavMeshDebugger()
+        : m_isEnabled( true )
     {
+    }
+
+    bool NavMeshDebugger::IsEnabled() const
+    {
+        return m_isEnabled;
+    }
+
+    void NavMeshDebugger::SetEnabled( bool isEnabled )
+    {
+        m_isEnabled = isEnabled;
     }
 
     void NavMeshDebugger::Render()

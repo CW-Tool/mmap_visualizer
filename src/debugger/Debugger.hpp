@@ -13,12 +13,14 @@
 
 namespace Debugger
 {
-    class LuaFrame
+    class DebuggerLuaFrame
     {
     public:
-        LuaFrame( ProcessMemory & memory );
+        DebuggerLuaFrame( ProcessMemory & memory );
 
         bool           IsOpen() const { return m_isOpen; }
+        bool           IsNavMeshVisible();
+
         void           Open();
         void           Close();
 
@@ -37,10 +39,11 @@ namespace Debugger
         void                        Update();
         void                        Render();
 
+        static void                 RegisterLua( Wow::LuaState & state );
+
         Wow::ObjectManager &        GetObjectMgr();
 
     private:
-
         Renderer            m_renderer;
         ProcessMemory       m_memory;
 
@@ -48,7 +51,7 @@ namespace Debugger
         Wow::ObjectManager  m_objectMgr;
     };
 
-    extern Debugger * GetDebugger();
+    extern Debugger *       GetDebugger();
 }
 
 #endif // Debugger_hpp__

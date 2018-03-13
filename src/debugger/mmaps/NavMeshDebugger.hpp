@@ -40,6 +40,9 @@ namespace Debugger
     public:
         NavMeshDebugger();
 
+        bool                     IsEnabled() const;
+        void                     SetEnabled( bool isEnabled );
+
         void                     Render();
         void                     Update( Wow::Player & player, Wow::Camera & camera );
 
@@ -48,6 +51,7 @@ namespace Debugger
 
         std::optional< NavMesh > m_lastLoadedNavMesh;
 
+        bool                     m_isEnabled;
         NavMeshGeometry          m_geometry;
     };
 }
