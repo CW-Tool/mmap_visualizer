@@ -10,8 +10,6 @@
 
 namespace Wow
 {
-    using Vector3f = Debugger::Vector3f;
-
     class CameraInfo
     {
     public:

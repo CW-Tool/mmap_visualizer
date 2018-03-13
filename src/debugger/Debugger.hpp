@@ -25,8 +25,10 @@ namespace Debugger
         void           Close();
 
     protected:
-        bool           m_isOpen;
-        Wow::LuaState  m_lua;
+        bool                m_isOpen;
+
+        Wow::LuaState       m_lua;
+        Wow::LuaCheckBox *  m_navMeshBox;
     };
 
     Vector2i GetTileCoord( Wow::Location & loc );

@@ -45,7 +45,7 @@ namespace Wow
         LuaReturnValues result;
         
         auto & data = result.emplace();
-        for ( auto idx = 0u; idx < returnCount; ++idx )
+        for ( int idx = 0; idx < returnCount; ++idx )
         {
             LuaType type = static_cast< LuaType >( m_type( m_state, -1 ) );
             switch ( type )
@@ -74,5 +74,13 @@ namespace Wow
 
         //m_setTop( m_state, top );
         return result;
+    }
+
+    LuaRootFrame * LuaState::CreateFrame( const std::string & name )
+    {
+        auto frame = std::make_unique< LuaRootFrame >( *this, name );
+        m_frames.push_back( std::move( frame ) );
+
+        return m_frames.back().get();
     }
 }

@@ -126,14 +126,14 @@ namespace Debugger
             LineGeometry & lines = m_geometry.lines;
             lines.Clear();
 
-            for ( auto polyIdx = 0u; polyIdx < m_lastLoadedNavMesh->tile.header->detailMeshCount; ++polyIdx )
+            for ( int polyIdx = 0; polyIdx < m_lastLoadedNavMesh->tile.header->detailMeshCount; ++polyIdx )
             {
                 NavMeshPoly & poly = reinterpret_cast< NavMeshPoly * >( tile.polys )[ polyIdx ];
 
                 auto polyType = poly.areaAndtype >> 6;
 
                 NavMeshPolyDetail & detail = reinterpret_cast< NavMeshPolyDetail * >( tile.detailMeshes )[ polyIdx ];
-                for ( auto triIdx = 0u; triIdx < detail.triCount; ++triIdx )
+                for ( int triIdx = 0; triIdx < detail.triCount; ++triIdx )
                 {
                     NavDetailTriangle & triangle = reinterpret_cast< NavDetailTriangle * >( tile.detailTris )[ detail.triBase + triIdx ];
 

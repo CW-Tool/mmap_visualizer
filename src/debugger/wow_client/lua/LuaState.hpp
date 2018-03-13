@@ -2,11 +2,13 @@
 #define LuaState_hpp__
 
 #include "memory/ProcessMemory.hpp"
+#include "LuaFrame.hpp"
 
 #include <string>
 #include <vector>
 #include <variant>
 #include <optional>
+#include <memory>
 
 namespace Wow
 {
@@ -61,10 +63,14 @@ namespace Wow
 
         LuaReturnValues Execute( const std::string & script );
 
+        LuaRootFrame *  CreateFrame( const std::string & name );
+
     protected:
         void            lua_pop( lua_State * state, int n );
 
         lua_State*      m_state;
+
+        std::vector< std::unique_ptr< LuaRootFrame > > m_frames;
 
         luaL_loadbuffer m_loadBuffer;
         luaL_dostring   m_doString;
