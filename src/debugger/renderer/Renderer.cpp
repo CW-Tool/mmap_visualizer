@@ -267,8 +267,17 @@ namespace Debugger
     Geometry::Geometry( Colors color, Type type )
         : m_color( color )
         , m_type( type )
+        , m_vertexBuffer( nullptr )
     {
 
+    }
+
+    Geometry::~Geometry()
+    {
+        if ( m_vertexBuffer != nullptr )
+        {
+            m_vertexBuffer->Release();
+        }
     }
 
     void Geometry::SetDeviceState( IDirect3DDevice9 * device ) const
@@ -320,8 +329,21 @@ namespace Debugger
     {
         SetDeviceState( device );
 
-        device->SetFVF( D3DFVF_XYZ | D3DFVF_DIFFUSE );
-        device->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_vertices.size() / 3, m_vertices.data(), sizeof( Vertex ) );
+        const DWORD D3D_VERTEX_SETUP = D3DFVF_XYZ | D3DFVF_DIFFUSE;
+
+        if ( m_vertexBuffer == nullptr )
+        {
+            device->CreateVertexBuffer( m_vertices.size() * sizeof( Vertex ), D3DUSAGE_WRITEONLY, D3D_VERTEX_SETUP, D3DPOOL_DEFAULT, &m_vertexBuffer, nullptr );
+
+            void * buffer = nullptr;
+            m_vertexBuffer->Lock( 0, m_vertices.size() * sizeof( Vertex ), &buffer, 0 );
+            memcpy( buffer, &m_vertices[ 0 ], m_vertices.size() * sizeof( Vertex ) );
+            m_vertexBuffer->Unlock();
+        }
+
+        device->SetFVF( D3D_VERTEX_SETUP );
+        device->SetStreamSource( 0, m_vertexBuffer, 0, sizeof( Vertex ) );
+        device->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_vertices.size() / 3 );
     }
 
     LineGeometry::LineGeometry( Colors color )
@@ -340,8 +362,21 @@ namespace Debugger
     {
         SetDeviceState( device );
 
-        device->SetFVF( D3DFVF_XYZ | D3DFVF_DIFFUSE );
-        device->DrawPrimitiveUP( D3DPT_LINELIST, m_vertices.size() / 2, m_vertices.data(), sizeof( Vertex ) );
+        const DWORD D3D_VERTEX_SETUP = D3DFVF_XYZ | D3DFVF_DIFFUSE;
+
+        if ( m_vertexBuffer == nullptr )
+        {
+            device->CreateVertexBuffer( m_vertices.size() * sizeof( Vertex ), D3DUSAGE_WRITEONLY, D3D_VERTEX_SETUP, D3DPOOL_DEFAULT, &m_vertexBuffer, nullptr );
+
+            void * buffer = nullptr;
+            m_vertexBuffer->Lock( 0, m_vertices.size() * sizeof( Vertex ), &buffer, 0 );
+            memcpy( buffer, &m_vertices[ 0 ], m_vertices.size() * sizeof( Vertex ) );
+            m_vertexBuffer->Unlock();
+        }
+
+        device->SetFVF( D3D_VERTEX_SETUP );
+        device->SetStreamSource( 0, m_vertexBuffer, 0, sizeof( Vertex ) );
+        device->DrawPrimitive( D3DPT_LINELIST, 0, m_vertices.size() / 2 );
     }
 
     void DeviceContext::Store( IDirect3DDevice9* device, DeviceState & state )
@@ -350,12 +385,12 @@ namespace Debugger
         device->GetVertexShader( &state.vs );
         device->GetTexture( 0, &state.tex0 );
 
-        for ( auto idx = 0; idx < state.states.size(); ++idx )
+        for ( auto idx = 0u; idx < state.states.size(); ++idx )
         {
             device->GetRenderState( D3DRENDERSTATETYPE( idx ), &state.states[ idx ] );
         }
 
-        for ( auto idx = 0; idx < state.transforms.size(); ++idx )
+        for ( auto idx = 0u; idx < state.transforms.size(); ++idx )
         {
             device->GetTransform( D3DTRANSFORMSTATETYPE( idx ), &state.transforms[ idx ] );
         }
@@ -369,12 +404,12 @@ namespace Debugger
         device->SetVertexShader( state.vs );
         device->SetTexture( 0, state.tex0 );
 
-        for ( auto idx = 0; idx < state.states.size(); ++idx )
+        for ( auto idx = 0u; idx < state.states.size(); ++idx )
         {
             device->SetRenderState( D3DRENDERSTATETYPE( idx ), state.states[ idx ] );
         }
 
-        for ( auto idx = 0; idx < state.transforms.size(); ++idx )
+        for ( auto idx = 0u; idx < state.transforms.size(); ++idx )
         {
             device->SetTransform( D3DTRANSFORMSTATETYPE( idx ), &state.transforms[ idx ] );
         }

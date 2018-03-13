@@ -224,6 +224,7 @@ namespace Debugger
         };
 
         Geometry( Colors color, Type type );
+        virtual ~Geometry();
 
         virtual void SetDeviceState( IDirect3DDevice9 * device ) const;
         virtual void Render( IDirect3DDevice9* device ) const = 0;
@@ -234,6 +235,9 @@ namespace Debugger
         std::vector< Vertex >   m_vertices;
         Colors                  m_color;
         Type                    m_type;
+
+        //! kill me for mutable :)
+        mutable IDirect3DVertexBuffer9 * m_vertexBuffer;
     };
 
     class TriangleGeometry : public Geometry
@@ -242,6 +246,7 @@ namespace Debugger
         TriangleGeometry( Colors color );
 
         void            AddTriangle( const Vector3f & p0, const Vector3f & p1, const Vector3f & p2, std::optional< Colors > color = std::nullopt );
+
         virtual void    Render( IDirect3DDevice9* device ) const override;
     };
 
