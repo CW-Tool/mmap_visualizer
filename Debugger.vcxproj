@@ -29,7 +29,9 @@
     <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp" />
     <ClCompile Include="src\debugger\renderer\Renderer.cpp" />
     <ClCompile Include="src\debugger\wow_client\Camera.cpp" />
+    <ClCompile Include="src\debugger\wow_client\lua\LuaFrame.cpp" />
     <ClCompile Include="src\debugger\wow_client\lua\LuaState.cpp" />
+    <ClCompile Include="src\debugger\wow_client\Object.cpp" />
     <ClCompile Include="src\debugger\wow_client\objects\ObjectManager.cpp" />
     <ClCompile Include="src\debugger\wow_client\objects\Player.cpp" />
     <ClCompile Include="src\debugger\wow_client\world\World.cpp" />
@@ -51,7 +53,9 @@
     <ClInclude Include="src\debugger\utils\String.hpp" />
     <ClInclude Include="src\debugger\wow_client\Camera.hpp" />
     <ClInclude Include="src\debugger\wow_client\Location.hpp" />
+    <ClInclude Include="src\debugger\wow_client\lua\LuaFrame.hpp" />
     <ClInclude Include="src\debugger\wow_client\lua\LuaState.hpp" />
+    <ClInclude Include="src\debugger\wow_client\Object.hpp" />
     <ClInclude Include="src\debugger\wow_client\objects\ObjectManager.hpp" />
     <ClInclude Include="src\debugger\wow_client\objects\Player.hpp" />
     <ClInclude Include="src\debugger\wow_client\Offsets.hpp" />

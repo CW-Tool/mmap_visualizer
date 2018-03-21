@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <fstream>
 
 namespace Debugger
 {
@@ -41,11 +42,15 @@ namespace Debugger
         void                        Update();
         void                        Render();
 
+        void                        Log( const std::string& msg );
+
         static void                 RegisterLua( Wow::LuaState & state );
 
         Wow::ObjectManager &        GetObjectMgr();
 
     private:
+        std::ofstream       m_logFile;
+
         Renderer            m_renderer;
         ProcessMemory       m_memory;
 

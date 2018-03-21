@@ -11,10 +11,11 @@
 
 #include <vector>
 #include <optional>
+#include <unordered_map>
 
 namespace Debugger
 {
-    struct NavMesh
+    struct MapNavMesh
     {
         uint32_t mapId;
         Vector2i coord;
@@ -25,7 +26,7 @@ namespace Debugger
 
     struct NavMeshGeometry
     {
-        NavMeshGeometry()
+        NavMeshGeometry( Colors color = Colors::GreenAlpha )
             : triangles( Colors::GreenAlpha )
             , lines( Colors::WhiteAlpha )
         {
@@ -34,6 +35,8 @@ namespace Debugger
         TriangleGeometry    triangles;
         LineGeometry        lines;
     };
+
+    using NavMeshGeometryMap = std::unordered_map< uint32_t, NavMeshGeometry >;
 
     class NavMeshDebugger
     {
@@ -44,15 +47,19 @@ namespace Debugger
         void                     SetEnabled( bool isEnabled );
 
         void                     Render();
+        void                     RenderModel( uint32_t modelId, const Wow::Location & pos, float rot );
+
         void                     Update( Wow::Player & player, Wow::Camera & camera );
 
     protected:
-        std::optional< NavMesh > LoadNavMesh( uint32_t mapId, const Vector2i & coord );
+        std::optional< MapNavMesh > LoadMapNavMesh( uint32_t mapId, const Vector2i & coord );
+        bool                        LoadModelNavMesh( uint32_t modelId );
 
-        std::optional< NavMesh > m_lastLoadedNavMesh;
+        std::optional< MapNavMesh > m_lastLoadedNavMesh;
+        NavMeshGeometryMap          m_modelGeometry;
 
-        bool                     m_isEnabled;
-        NavMeshGeometry          m_geometry;
+        bool                        m_isEnabled;
+        NavMeshGeometry             m_geometry;
     };
 }
 

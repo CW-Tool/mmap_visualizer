@@ -10,8 +10,8 @@ namespace Wow
     {
         enum Offsets
         {
-            PTR_WorldMapId = 0x00AB63BC,
-            REL_Location = 0x798
+            PTR_WorldMapId  = 0x00AB63BC,
+            REL_Location    = 0x798
         };
 
     public:

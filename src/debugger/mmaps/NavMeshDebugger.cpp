@@ -43,6 +43,28 @@ namespace Debugger
         }
     }
 
+    void NavMeshDebugger::RenderModel( uint32_t modelId, const Wow::Location & pos, float rot )
+    {
+        if ( !LoadModelNavMesh( modelId ) )
+            return;
+
+        Wow::Camera camera = GetDebugger()->GetObjectMgr().GetCamera();
+
+        Transform transform = Transform::FromCamera( camera );
+
+        D3DXQUATERNION quat;
+        D3DXQuaternionRotationYawPitchRoll( D3DXQuaternionIdentity( &quat ), 0.0f, 0.0f, rot );
+
+        D3DXVECTOR3 trans( pos.x, pos.y, pos.z );
+        D3DXMatrixTransformation( &transform.world, nullptr, nullptr, nullptr, nullptr, &quat, &trans );
+
+        auto & geometry = m_modelGeometry[ modelId ];
+
+        auto renderer = GetRenderer();
+        renderer->RenderGeometry( geometry.triangles, &transform );
+        renderer->RenderGeometry( geometry.lines, &transform );
+    }
+
     void NavMeshDebugger::Update( Wow::Player & player, Wow::Camera & camera )
     {
         uint32_t mapId = player.GetMapId();
@@ -50,25 +72,13 @@ namespace Debugger
         Wow::Location loc = player.GetLocation();
         Vector2i tile = GetTileCoord( loc );
 
-        m_lastLoadedNavMesh = LoadNavMesh( mapId, tile );
+        m_lastLoadedNavMesh = LoadMapNavMesh( mapId, tile );
     }
 
-    std::optional< NavMesh > NavMeshDebugger::LoadNavMesh( uint32_t mapId, const Vector2i & coord )
+    void LoadNavMeshTile( std::ifstream &file, NavMeshTile & tile, std::vector<uint8_t> & data, NavMeshGeometry &geometry )
     {
-        if ( m_lastLoadedNavMesh && m_lastLoadedNavMesh->mapId == mapId && m_lastLoadedNavMesh->coord.x == coord.x && m_lastLoadedNavMesh->coord.y == coord.y )
-            return m_lastLoadedNavMesh;
-
-        std::ifstream file( Format( "F:\\Sunwell\\emu_data\\mmaps\\%03u%02u%02u.mmtile", mapId, coord.x, coord.y ), std::ios::in | std::ios::binary );
-        if ( !file.is_open() )
-            return std::nullopt;
-
         NavTileHeader tileHeader;
         file.read( reinterpret_cast< char * >( &tileHeader ), sizeof( NavTileHeader ) );
-
-        m_lastLoadedNavMesh.emplace();
-
-        NavMeshTile & tile = m_lastLoadedNavMesh->tile;
-        std::vector< uint8_t > & data = m_lastLoadedNavMesh->data;
 
         data.resize( tileHeader.size );
 
@@ -117,16 +127,16 @@ namespace Debugger
                 uint8_t unk;
             };
 
-            Vector3f * verts = reinterpret_cast< Vector3f * >( m_lastLoadedNavMesh->tile.verts );
-            Vector3f * detailVerts = reinterpret_cast< Vector3f * >( m_lastLoadedNavMesh->tile.detailVerts );
+            Vector3f * verts = reinterpret_cast< Vector3f * >( tile.verts );
+            Vector3f * detailVerts = reinterpret_cast< Vector3f * >( tile.detailVerts );
 
-            TriangleGeometry & triangles = m_geometry.triangles;
+            TriangleGeometry & triangles = geometry.triangles;
             triangles.Clear();
 
-            LineGeometry & lines = m_geometry.lines;
+            LineGeometry & lines = geometry.lines;
             lines.Clear();
 
-            for ( int polyIdx = 0; polyIdx < m_lastLoadedNavMesh->tile.header->detailMeshCount; ++polyIdx )
+            for ( int polyIdx = 0; polyIdx < tile.header->detailMeshCount; ++polyIdx )
             {
                 NavMeshPoly & poly = reinterpret_cast< NavMeshPoly * >( tile.polys )[ polyIdx ];
 
@@ -157,7 +167,41 @@ namespace Debugger
                 }
             }
         }
+    }
+
+    std::optional< MapNavMesh > NavMeshDebugger::LoadMapNavMesh( uint32_t mapId, const Vector2i & coord )
+    {
+        if ( m_lastLoadedNavMesh && m_lastLoadedNavMesh->mapId == mapId && m_lastLoadedNavMesh->coord.x == coord.x && m_lastLoadedNavMesh->coord.y == coord.y )
+            return m_lastLoadedNavMesh;
+
+        std::ifstream file( Format( "F:\\Sunwell\\emu_data\\mmaps\\%03u%02u%02u.mmtile", mapId, coord.x, coord.y ), std::ios::in | std::ios::binary );
+        if ( !file.is_open() )
+            return std::nullopt;
+
+        m_lastLoadedNavMesh.emplace();
+
+        NavMeshTile & tile = m_lastLoadedNavMesh->tile;
+        std::vector< uint8_t > & data = m_lastLoadedNavMesh->data;
+
+        LoadNavMeshTile( file, tile, data, m_geometry );
 
         return m_lastLoadedNavMesh;
+    }
+
+    bool NavMeshDebugger::LoadModelNavMesh( uint32_t modelId )
+    {
+        if ( m_modelGeometry.find( modelId ) != m_modelGeometry.end() )
+            return true;
+
+        std::ifstream file( Format( "F:\\Sunwell\\emu_data\\mmaps\\models\\%05u.mmtile", modelId ), std::ios::in | std::ios::binary );
+        if ( !file.is_open() )
+            return false;
+
+        std::vector< uint8_t > data;
+        NavMeshTile tile;
+
+        m_modelGeometry.emplace( modelId, Colors::LightYellow );
+        LoadNavMeshTile( file, tile, data, m_modelGeometry[ modelId ] );
+        return true;
     }
 }

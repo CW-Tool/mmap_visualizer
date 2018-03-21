@@ -81,6 +81,8 @@
     <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\debugger\wow_client\lua\LuaFrame.cpp" />
+    <ClCompile Include="src\debugger\wow_client\Object.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\debugger\renderer\Renderer.hpp">
@@ -146,5 +148,9 @@
     <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\lua\LuaFrame.hpp">
+      <Filter>src\wow_client\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\wow_client\Object.hpp" />
   </ItemGroup>
 </Project>
