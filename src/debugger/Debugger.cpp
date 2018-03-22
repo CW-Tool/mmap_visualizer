@@ -69,12 +69,11 @@ namespace Debugger
         {
             auto guid = packet.ReadPackGuid();
 
-            //! flag
             packet.Read< uint8_t >();
 
             auto start = packet.Read< Vector3f >();
 
-            auto splineId = packet.Read< uint32_t >();
+            packet.Read< uint32_t >();
 
             auto moveType = packet.Read< uint8_t >();
             switch ( moveType )
@@ -113,31 +112,33 @@ namespace Debugger
             if ( splineFlags.animation )
             {
                 packet.Read< uint8_t >(); //! animId
-                packet.Read< int32_t >(); //! start_time
+                packet.Read< uint32_t >(); //! start_time
             }
 
-            auto duration = packet.Read< int32_t >();
+            auto duration = packet.Read< uint32_t >();
 
             if ( splineFlags.parabolic )
             {
                 packet.Read< float >();
-                packet.Read< int32_t >();
+                packet.Read< uint32_t >();
             }
 
+            size_t pointsCount = packet.Read< uint32_t >();
+
             std::vector< Vector3f > points;
-            points.resize( packet.Read< uint32_t >() );
+            points.reserve( pointsCount + 1 );
+
+            points.push_back( start );
 
             if ( splineFlags.catmullrom || splineFlags.flying )
             {
-                for ( auto idx = 0u; idx < points.size(); ++idx )
+                for ( auto idx = 0u; idx < pointsCount; ++idx )
                 {
-                    points[ idx ] = packet.Read<Vector3f>();
+                    points.push_back( packet.Read<Vector3f>() );
                 }
             }
             else
             {
-                points[ 0 ] = start;
-
                 Vector3f end = packet.Read<Vector3f>();
 
                 Vector3f origin;
@@ -145,12 +146,17 @@ namespace Debugger
                 origin.y = ( start.y + end.y ) * 0.5f;
                 origin.z = ( start.z + end.z ) * 0.5f;
 
-                for ( auto idx = 1u; idx < points.size(); ++idx )
+                for ( auto idx = 1u; idx < pointsCount; ++idx )
                 {
-                    points[ idx ] = packet.ReadPackXYZ( origin );
+                    points.push_back( packet.ReadPackXYZ( origin ) );
                 }
 
                 points.push_back( end );
+            }
+
+            for ( auto & p : points )
+            {
+                p.z += 0.33f;
             }
 
             m_paths[ guid ] = std::make_unique< LineGeometry >( Colors::WhiteAlpha );
@@ -160,6 +166,8 @@ namespace Debugger
             {
                 geometry->AddLine( points[ idx -1 ], points[ idx ], Colors::Yellow );
             }
+
+            geometry->AddLine( points.front(), points.back(), Colors::Purple );
         } );
     }
 
