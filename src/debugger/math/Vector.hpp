@@ -14,6 +14,16 @@ struct Vector3f
     float x;
     float y;
     float z;
+
+    inline Vector3f operator+( const Vector3f & rhs )
+    {
+        return Vector3f{ x + rhs.x, y + rhs.y, z + rhs.z };
+    }
+
+    inline Vector3f operator-( const Vector3f & rhs )
+    {
+        return Vector3f{ x - rhs.x, y - rhs.y, z - rhs.z };
+    }
 };
 
 struct Vector2u

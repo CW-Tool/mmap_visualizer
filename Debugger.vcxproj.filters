@@ -37,6 +37,9 @@
     <Filter Include="contrib\minhook">
       <UniqueIdentifier>{f59b9810-db41-4ca1-9cd3-223c651cc05d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\sniffer">
+      <UniqueIdentifier>{b54fbe3c-0edc-457f-bc32-7b19ae2c29fa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\debugger\main.cpp">
@@ -78,11 +81,18 @@
     <ClCompile Include="src\debugger\wow_client\Camera.cpp">
       <Filter>src\wow_client</Filter>
     </ClCompile>
-    <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="src\debugger\wow_client\Object.cpp">
+      <Filter>src\wow_client</Filter>
     </ClCompile>
-    <ClCompile Include="src\debugger\wow_client\lua\LuaFrame.cpp" />
-    <ClCompile Include="src\debugger\wow_client\Object.cpp" />
+    <ClCompile Include="src\debugger\sniffer\PacketSniffer.cpp">
+      <Filter>src\sniffer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\wow_client\lua\LuaFrame.cpp">
+      <Filter>src\wow_client\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp">
+      <Filter>src\mmaps</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\debugger\renderer\Renderer.hpp">
@@ -145,12 +155,17 @@
     <ClInclude Include="contrib\minhook\src\trampoline.h">
       <Filter>contrib\minhook</Filter>
     </ClInclude>
-    <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\debugger\wow_client\lua\LuaFrame.hpp">
       <Filter>src\wow_client\lua</Filter>
     </ClInclude>
-    <ClInclude Include="src\debugger\wow_client\Object.hpp" />
+    <ClInclude Include="src\debugger\wow_client\Object.hpp">
+      <Filter>src\wow_client</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\sniffer\PacketSniffer.hpp">
+      <Filter>src\sniffer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp">
+      <Filter>src\mmaps</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

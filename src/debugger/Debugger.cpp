@@ -13,50 +13,43 @@ namespace Debugger
 {
     Debugger * g_debugger = nullptr;
 
-    char *__cdecl FrameScript_GetText( char * arg1, DWORD arg2, DWORD arg3 )
+    struct SplineFlags
     {
-        g_debugger->Log( Format( "GetText1: %s", arg1 ? arg1 : "missing" ) );
-        return arg1;
-    }
+        uint8_t animId : 8;
+        bool done : 1;
+        bool falling : 1;
+        bool no_spline : 1;
+        bool parabolic : 1;
+        bool walkmode : 1;
+        bool flying : 1;
+        bool orientationFixed : 1;
+        bool final_point : 1;
+        bool final_target : 1;
+        bool final_angle : 1;
+        bool catmullrom : 1;
+        bool cyclic : 1;
+        bool enter_cycle : 1;
+        bool animation : 1;
+        bool frozen : 1;
+        bool transportEnter : 1;
+        bool transportExit : 1;
+        bool unknown7 : 1;
+        bool unknown8 : 1;
+        bool orientationInversed : 1;
+        bool unknown10 : 1;
+        bool unknown11 : 1;
+        bool unknown12 : 1;
+        bool unknown13 : 1;
+    };
 
-    typedef struct
+    enum MonsterMoveType
     {
-        void* vTable;
-        BYTE* buffer;
-        DWORD base;
-        DWORD alloc;
-        DWORD size;
-        DWORD read;
-    } CDataStore;
-
-    int __fastcall NetClient_ProcessMessage( void* thisPTR, void* dummy, void* param1, CDataStore* dataStore, void* connectionId )
-    {
-        return 0;
-    }
-
-    template< class F, class F2 >
-    void RegisterHooks( uintptr_t offset, F && hook, F2 && res )
-    {
-        using FunctionType = decltype( &hook );
-
-        LPVOID address = reinterpret_cast< LPVOID >( offset );
-        static FunctionType s_OrigFunc = reinterpret_cast< FunctionType >( address );
-        static FunctionType s_HookFunc = std::forward< FunctionType >( hook );
-        static F2 s_ResultHookFunc = std::forward< F2 >( res );
-
-        static FunctionType s_RealHook = []( auto ... args )
-        {
-            s_HookFunc( args... );
-
-            auto value = s_OrigFunc( args... );
-            s_ResultHookFunc( value );
-
-            return value;
-        };
-
-        MH_CreateHook( address, s_RealHook, reinterpret_cast< void** >( &s_OrigFunc ) );
-        MH_EnableHook( address );
-    }
+        MonsterMoveNormal = 0,
+        MonsterMoveStop = 1,
+        MonsterMoveFacingSpot = 2,
+        MonsterMoveFacingTarget = 3,
+        MonsterMoveFacingAngle = 4
+    };
 
     Debugger::Debugger( VTABLE_TYPE* vtable )
         : m_renderer( vtable )
@@ -65,25 +58,6 @@ namespace Debugger
     {
         m_logFile.open( "F:\\injector.log", std::ios_base::out | std::ios_base::trunc );
 
-        //RegisterHooks( 0x00819D40, FrameScript_GetText, []( char * text )
-        //{
-        //    //g_debugger->Log( Format( "GetText2: %s", text ? text : "missing" ) );
-        //} );
-
-        RegisterHooks( 0x631FE0, NetClient_ProcessMessage, []( int returnCode )
-        {
-        } );
-
-
-        //RegisterHooks( 0x0087254D, LoadLibaryHook, []( HMODULE returnCode )
-        //{
-        //} );
-
-        //0087254D FF 15 48 F2 9D 00
-        //m_memory.Write( 0x0087254D, { 0xFF, 0x15, 0x48, 0xF2, 0x00, 0x00 } );
-
-        //RegisterHooks( 0x00819D40, FrameScript_GetText );
-
         g_debugger = this;
 
         Wow::LuaState lua( m_memory );
@@ -91,6 +65,102 @@ namespace Debugger
         lua.Execute( "AccountLoginPasswordEdit:SetText('Root')" );
         lua.Execute( "AccountLogin_Login()" );
 
+        m_sniffer.AddPacketListener( Opcodes::SMSG_MONSTER_MOVE, [this]( PacketReader & packet )
+        {
+            auto guid = packet.ReadPackGuid();
+
+            //! flag
+            packet.Read< uint8_t >();
+
+            auto start = packet.Read< Vector3f >();
+
+            auto splineId = packet.Read< uint32_t >();
+
+            auto moveType = packet.Read< uint8_t >();
+            switch ( moveType )
+            {
+                case MonsterMoveStop:
+                {
+                    m_paths.erase( guid );
+                    return;
+                }
+                case MonsterMoveFacingAngle:
+                {
+                    packet.Read< float >();
+                    break;
+                }
+                case MonsterMoveFacingSpot:
+                {
+                    packet.Read< Vector3f >();
+                    break;
+                }
+                case MonsterMoveFacingTarget:
+                {
+                    packet.Read< uint64_t >();
+                    break;
+                }
+                case MonsterMoveNormal:
+                {
+                    break;
+                }
+                default:
+                    return;
+            }
+
+            auto uFlags = packet.Read< uint32_t >();
+
+            auto splineFlags = *reinterpret_cast< SplineFlags * >( &uFlags );
+            if ( splineFlags.animation )
+            {
+                packet.Read< uint8_t >(); //! animId
+                packet.Read< int32_t >(); //! start_time
+            }
+
+            auto duration = packet.Read< int32_t >();
+
+            if ( splineFlags.parabolic )
+            {
+                packet.Read< float >();
+                packet.Read< int32_t >();
+            }
+
+            std::vector< Vector3f > points;
+            points.resize( packet.Read< uint32_t >() );
+
+            if ( splineFlags.catmullrom || splineFlags.flying )
+            {
+                for ( auto idx = 0u; idx < points.size(); ++idx )
+                {
+                    points[ idx ] = packet.Read<Vector3f>();
+                }
+            }
+            else
+            {
+                points[ 0 ] = start;
+
+                Vector3f end = packet.Read<Vector3f>();
+
+                Vector3f origin;
+                origin.x = ( start.x + end.x ) * 0.5f;
+                origin.y = ( start.y + end.y ) * 0.5f;
+                origin.z = ( start.z + end.z ) * 0.5f;
+
+                for ( auto idx = 1u; idx < points.size(); ++idx )
+                {
+                    points[ idx ] = packet.ReadPackXYZ( origin );
+                }
+
+                points.push_back( end );
+            }
+
+            m_paths[ guid ] = std::make_unique< LineGeometry >( Colors::WhiteAlpha );
+
+            auto & geometry = m_paths[ guid ];
+            for ( auto idx = 1; idx < points.size(); ++idx )
+            {
+                geometry->AddLine( points[ idx -1 ], points[ idx ], Colors::Yellow );
+            }
+        } );
     }
 
     Vector2i GetTileCoord( Wow::Location & loc )
@@ -116,17 +186,16 @@ namespace Debugger
 
         m_objectMgr.UpdateVisibleObjects();
 
-        static DebuggerLuaFrame s_frame( m_memory );
-        if ( !s_frame.IsOpen() )
+        if ( m_frame.get() == nullptr )
         {
-            s_frame.Open();
+            m_frame = std::make_unique<DebuggerLuaFrame>( m_memory );
+            m_frame->Open();
         }
 
         auto player = m_objectMgr.GetLocalPlayer();
         auto camera = m_objectMgr.GetCamera();
 
-        m_navDebugger.SetEnabled( s_frame.IsNavMeshVisible() );
-        if ( m_navDebugger.IsEnabled() )
+        if ( m_frame->IsNavMeshVisible() )
         {
             m_navDebugger.Update( player, camera );
         }
@@ -134,7 +203,10 @@ namespace Debugger
 
     void Debugger::Render()
     {
-        if ( m_navDebugger.IsEnabled() )
+        if ( m_frame == nullptr )
+            return;
+
+        if ( m_frame->IsNavMeshVisible() )
         {
             m_navDebugger.Render();
 
@@ -152,6 +224,23 @@ namespace Debugger
                 }
             } );
         }
+
+        if ( m_frame->IsPathRenderingEnabled() )
+        {
+            m_objectMgr.VisitVisibleObjects( [this]( Wow::ObjectGuid guid )
+            {
+                auto it = m_paths.find( guid );
+                if ( it == m_paths.end() )
+                    return;
+
+                auto & geometry = it->second;
+
+                Wow::Camera camera = GetDebugger()->GetObjectMgr().GetCamera();
+                Transform transform = Transform::FromCamera( camera );
+
+                GetRenderer()->RenderGeometry( *geometry, &transform );
+            } );
+        }
     }
 
     void Debugger::Log( const std::string& msg )
@@ -160,18 +249,6 @@ namespace Debugger
         buffer.append( "\n" );
 
         m_logFile.write( buffer.c_str(), buffer.size() );
-    }
-
-    void Debugger::RegisterLua( Wow::LuaState & state )
-    {
-        //luaL_newmetatable( L, "Lua.MyClass" );
-        //luaL_register( L, 0, gDestroyMyClassFuncs );
-        //luaL_register( L, 0, gMyClassFuncs );
-        //lua_pushvalue( L, -1 );
-        //lua_setfield( L, -2, "__index" );
-
-        // Register the base class for instances of Sprite
-        //luaL_register( L, "MyClass", gSpriteFuncs );
     }
 
     Wow::ObjectManager & Debugger::GetObjectMgr()
@@ -197,15 +274,27 @@ namespace Debugger
         header->SetSize( { 180, 20 } );
         header->SetText( "SunwellVisualDebugger" );
 
-        auto label1 = frame->AddLabel( "g_navmesh_label" );
-        label1->SetPosition( { 5, -20 }, Wow::FrameAnchor::TOPLEFT );
-        label1->SetSize( { 160, 20 } );
-        label1->SetText( "Render navmesh" );
+        {
+            auto label1 = frame->AddLabel( "g_navmesh_label" );
+            label1->SetPosition( { 5, -20 }, Wow::FrameAnchor::TOPLEFT );
+            label1->SetSize( { 160, 20 } );
+            label1->SetText( "Render navmesh" );
 
-        m_navMeshBox = frame->AddCheckBox( "g_navmesh_box" );
-        m_navMeshBox->SetPosition( { 160, -20 }, Wow::FrameAnchor::TOPLEFT );
-        m_navMeshBox->SetSize( { 20, 20 } );
-        m_navMeshBox->SetText( "Render navmesh" );
+            m_navMeshBox = frame->AddCheckBox( "g_navmesh_box" );
+            m_navMeshBox->SetPosition( { 160, -20 }, Wow::FrameAnchor::TOPLEFT );
+            m_navMeshBox->SetSize( { 20, 20 } );
+        }
+
+        {
+            auto label2 = frame->AddLabel( "g_paths_label" );
+            label2->SetPosition( { 5, -40 }, Wow::FrameAnchor::TOPLEFT );
+            label2->SetSize( { 160, 20 } );
+            label2->SetText( "Render paths" );
+
+            m_pathRenderingBox = frame->AddCheckBox( "g_path_box" );
+            m_pathRenderingBox->SetPosition( { 160, -40 }, Wow::FrameAnchor::TOPLEFT );
+            m_pathRenderingBox->SetSize( { 20, 20 } );
+        }
     }
 
     void DebuggerLuaFrame::Open()
@@ -225,4 +314,8 @@ namespace Debugger
         return m_navMeshBox->IsChecked();
     }
 
+    bool DebuggerLuaFrame::IsPathRenderingEnabled()
+    {
+        return m_pathRenderingBox->IsChecked();
+    }
 }

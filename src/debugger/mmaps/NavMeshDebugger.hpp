@@ -43,9 +43,6 @@ namespace Debugger
     public:
         NavMeshDebugger();
 
-        bool                     IsEnabled() const;
-        void                     SetEnabled( bool isEnabled );
-
         void                     Render();
         void                     RenderModel( uint32_t modelId, const Wow::Location & pos, float rot );
 
@@ -58,7 +55,6 @@ namespace Debugger
         std::optional< MapNavMesh > m_lastLoadedNavMesh;
         NavMeshGeometryMap          m_modelGeometry;
 
-        bool                        m_isEnabled;
         NavMeshGeometry             m_geometry;
     };
 }

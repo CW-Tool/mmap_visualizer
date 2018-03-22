@@ -28,6 +28,7 @@
     <ClCompile Include="src\debugger\main.cpp" />
     <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp" />
     <ClCompile Include="src\debugger\renderer\Renderer.cpp" />
+    <ClCompile Include="src\debugger\sniffer\PacketSniffer.cpp" />
     <ClCompile Include="src\debugger\wow_client\Camera.cpp" />
     <ClCompile Include="src\debugger\wow_client\lua\LuaFrame.cpp" />
     <ClCompile Include="src\debugger\wow_client\lua\LuaState.cpp" />
@@ -50,6 +51,7 @@
     <ClInclude Include="src\debugger\mmaps\NavMesh.hpp" />
     <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp" />
     <ClInclude Include="src\debugger\renderer\Renderer.hpp" />
+    <ClInclude Include="src\debugger\sniffer\PacketSniffer.hpp" />
     <ClInclude Include="src\debugger\utils\String.hpp" />
     <ClInclude Include="src\debugger\wow_client\Camera.hpp" />
     <ClInclude Include="src\debugger\wow_client\Location.hpp" />
