@@ -54,9 +54,7 @@ namespace Debugger
         RegisterHook< NetClient_ProcessMessage >( 0x631FE0, []( void* thisPTR, void* dummy, void* param1, ServerPacket* packet, void* connectionId )
         {
             PacketReader reader( *packet );
-
-            Opcodes opcode = reader.ReadOpcode();
-            for ( auto && handler : g_sniffer->m_handlers[ opcode ] )
+            for ( auto && handler : g_sniffer->m_handlers[ reader.GetOpcode() ] )
             {
                 handler( reader );
             }

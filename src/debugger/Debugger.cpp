@@ -65,9 +65,17 @@ namespace Debugger
         lua.Execute( "AccountLoginPasswordEdit:SetText('Root')" );
         lua.Execute( "AccountLogin_Login()" );
 
-        m_sniffer.AddPacketListener( Opcodes::SMSG_MONSTER_MOVE, [this]( PacketReader & packet )
+        auto ReadMonsterMove = [this]( PacketReader & packet )
         {
-            auto guid = packet.ReadPackGuid();
+            Wow::ObjectGuid guid = packet.ReadPackGuid();
+
+            Wow::ObjectGuid transportGuid = 0;
+            if ( packet.GetOpcode() == Opcodes::SMSG_MONSTER_MOVE_TRANSPORT )
+            {
+                transportGuid = packet.ReadPackGuid();
+
+                packet.Read< int8_t >();
+            }
 
             packet.Read< uint8_t >();
 
@@ -80,7 +88,6 @@ namespace Debugger
             {
                 case MonsterMoveStop:
                 {
-                    m_paths.erase( guid );
                     return;
                 }
                 case MonsterMoveFacingAngle:
@@ -154,21 +161,34 @@ namespace Debugger
                 points.push_back( end );
             }
 
+            auto transport = m_objectMgr.GetObject( transportGuid );
+
             for ( auto & p : points )
             {
                 p.z += 0.33f;
             }
 
-            m_paths[ guid ] = std::make_unique< LineGeometry >( Colors::WhiteAlpha );
+            auto & paths = m_paths[ guid ];
+            if ( paths.size() > 3 )
+            {
+                paths.erase( paths.begin() );
+            }
 
-            auto & geometry = m_paths[ guid ];
+            PathGeometry path{ transportGuid, std::make_unique< LineGeometry >( Colors::WhiteAlpha ) };
+
+            auto geometry = path.m_geometry.get();
             for ( auto idx = 1; idx < points.size(); ++idx )
             {
-                geometry->AddLine( points[ idx -1 ], points[ idx ], Colors::Yellow );
+                geometry->AddLine( points[ idx - 1 ], points[ idx ], Colors::Yellow );
             }
 
             geometry->AddLine( points.front(), points.back(), Colors::Purple );
-        } );
+
+            paths.emplace_back( std::move( path ) );
+        };
+
+        m_sniffer.AddPacketListener( Opcodes::SMSG_MONSTER_MOVE, ReadMonsterMove );
+        m_sniffer.AddPacketListener( Opcodes::SMSG_MONSTER_MOVE_TRANSPORT, ReadMonsterMove );
     }
 
     Vector2i GetTileCoord( Wow::Location & loc )
@@ -241,12 +261,28 @@ namespace Debugger
                 if ( it == m_paths.end() )
                     return;
 
-                auto & geometry = it->second;
+                for ( auto && path : it->second )
+                {
+                    Wow::Camera camera = GetDebugger()->GetObjectMgr().GetCamera();
+                    Transform transform = Transform::FromCamera( camera );
 
-                Wow::Camera camera = GetDebugger()->GetObjectMgr().GetCamera();
-                Transform transform = Transform::FromCamera( camera );
+                    if ( path.m_transportGuid != 0 )
+                    {
+                        auto transport = m_objectMgr.GetObject( path.m_transportGuid );
+                        if ( !transport )
+                            return;
 
-                GetRenderer()->RenderGeometry( *geometry, &transform );
+                        D3DXQUATERNION quat;
+                        D3DXQuaternionRotationYawPitchRoll( D3DXQuaternionIdentity( &quat ), 0.0f, 0.0f, transport->GetFacing() );
+
+                        auto pos = transport->GetPositon();
+
+                        D3DXVECTOR3 trans( pos.x, pos.y, pos.z );
+                        D3DXMatrixTransformation( &transform.world, nullptr, nullptr, nullptr, nullptr, &quat, &trans );
+                    }
+
+                    GetRenderer()->RenderGeometry( *path.m_geometry, &transform );
+                }
             } );
         }
     }

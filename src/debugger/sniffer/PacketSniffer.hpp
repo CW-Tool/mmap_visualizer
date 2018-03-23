@@ -32,10 +32,14 @@ namespace Debugger
             , m_carret( 0u )
             , m_size( p.size )
         {
-
+            m_opcode = ReadOpcode();
         }
 
-        Opcodes     ReadOpcode();
+        Opcodes GetOpcode() const
+        {
+            return m_opcode;
+        }
+
         uint64_t    ReadPackGuid();
         Vector3f    ReadPackXYZ( const Vector3f & origin );
 
@@ -51,6 +55,10 @@ namespace Debugger
         }
 
     protected:
+        Opcodes     ReadOpcode();
+
+        Opcodes     m_opcode;
+
         size_t      m_carret;
         uint8_t *   m_buffer;
         size_t      m_size;

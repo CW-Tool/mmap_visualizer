@@ -78,7 +78,13 @@ namespace Debugger
         ProcessMemory       m_memory;
         PacketSniffer       m_sniffer;
 
-        std::unordered_map< Wow::ObjectGuid, std::unique_ptr< LineGeometry > > m_paths;
+        struct PathGeometry
+        {
+            Wow::ObjectGuid                 m_transportGuid;
+            std::unique_ptr< LineGeometry > m_geometry;
+        };
+
+        std::unordered_map< Wow::ObjectGuid, std::vector< PathGeometry > > m_paths;
         std::unique_ptr< DebuggerLuaFrame > m_frame;
         NavMeshDebugger     m_navDebugger;
         Wow::ObjectManager  m_objectMgr;
