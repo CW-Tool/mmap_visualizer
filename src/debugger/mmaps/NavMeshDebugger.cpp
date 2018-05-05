@@ -7,6 +7,9 @@
 #include "utils/String.hpp"
 
 #include <fstream>
+#include "DetourNavMesh.h"
+#include "NavMesh.hpp"
+#include "DetourDebugDraw.h"
 
 namespace Debugger
 {
@@ -19,16 +22,44 @@ namespace Debugger
     {
     }
 
+    template< class T >
+    void hash_combine( uint32_t & seed, T value )
+    {
+        seed ^= std::hash<T>()( value ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
+    }
+
+    size_t GetMapTileHash( uint32_t mapId, const Vector2i &coord )
+    {
+        size_t hash = 0u;
+        hash_combine( hash, mapId );
+        hash_combine( hash, coord.x );
+        hash_combine( hash, coord.y );
+
+        return hash;
+    }
+
     void NavMeshDebugger::Render()
     {
-        if ( m_lastLoadedNavMesh )
+        auto player = GetDebugger()->GetObjectMgr().GetLocalPlayer();
+        uint32_t mapId = player.GetMapId();
+
+        Wow::Location loc = player.GetLocation();
+        Vector2i tile = GetTileCoord( loc );
+
+        auto tileHash = GetMapTileHash( mapId, tile );
+        auto it = m_mapGeometry.find( tileHash );
+        if ( it != m_mapGeometry.end() )
         {
             Wow::Camera camera = GetDebugger()->GetObjectMgr().GetCamera();
             Transform transform = Transform::FromCamera( camera );
 
+            auto & data = it->second;
+
             auto renderer = GetRenderer();
-            renderer->RenderGeometry( m_geometry.triangles, &transform );
-            renderer->RenderGeometry( m_geometry.lines, &transform );
+            for ( auto && geom : data.m_geometry )
+            {
+                renderer->RenderGeometry( *geom, &transform );
+            }
         }
     }
 
@@ -47,11 +78,13 @@ namespace Debugger
         D3DXVECTOR3 trans( pos.x, pos.y, pos.z );
         D3DXMatrixTransformation( &transform.world, nullptr, nullptr, nullptr, nullptr, &quat, &trans );
 
-        auto & geometry = m_modelGeometry[ modelId ];
+        auto & data = m_modelGeometry[ modelId ];
 
         auto renderer = GetRenderer();
-        renderer->RenderGeometry( geometry.triangles, &transform );
-        renderer->RenderGeometry( geometry.lines, &transform );
+        for ( auto && geom : data.m_geometry )
+        {
+            renderer->RenderGeometry( *geom, &transform );
+        }
     }
 
     void NavMeshDebugger::Update( Wow::Player & player, Wow::Camera & camera )
@@ -61,10 +94,16 @@ namespace Debugger
         Wow::Location loc = player.GetLocation();
         Vector2i tile = GetTileCoord( loc );
 
-        m_lastLoadedNavMesh = LoadMapNavMesh( mapId, tile );
+        LoadMapNavMesh( mapId, tile );
     }
 
-    void LoadNavMeshTile( std::ifstream &file, NavMeshTile & tile, std::vector<uint8_t> & data, NavMeshGeometry &geometry )
+    void NavMeshDebugger::Clear()
+    {
+        m_mapGeometry.clear();
+        m_modelGeometry.clear();
+    }
+
+    void LoadNavMeshTile( std::ifstream &file, dtNavMesh & navMesh, std::vector<uint8_t> & data, DebugDetourDraw & geometry )
     {
         NavTileHeader tileHeader;
         file.read( reinterpret_cast< char * >( &tileHeader ), sizeof( NavTileHeader ) );
@@ -73,108 +112,40 @@ namespace Debugger
 
         file.read( reinterpret_cast< char * >( &data[ 0 ] ), tileHeader.size );
 
-        auto header = ( NavMeshHeader* )&data[ 0 ];
-        const int headerSize = dtAlign4( sizeof( NavMeshHeader ) );
-        const int vertsSize = dtAlign4( sizeof( NavMeshVert ) * header->vertCount );
-        const int polysSize = dtAlign4( sizeof( NavMeshPoly )*header->polyCount );
-        const int linksSize = dtAlign4( sizeof( NavMeshLink )*( header->maxLinkCount ) );
-        const int detailMeshesSize = dtAlign4( sizeof( NavMeshPolyDetail )*header->detailMeshCount );
-        const int detailVertsSize = dtAlign4( sizeof( NavMeshVert ) * header->detailVertCount );
-        const int detailTrisSize = dtAlign4( sizeof( unsigned char ) * 4 * header->detailTriCount );
-        const int bvtreeSize = dtAlign4( sizeof( NavMeshBVNode )*header->bvNodeCount );
-        const int offMeshLinksSize = dtAlign4( sizeof( NavMeshOffMeshConnection )*header->offMeshConCount );
+        dtMeshHeader* header = reinterpret_cast< dtMeshHeader* >( &data[ 0 ] );
+        dtTileRef tileRef = 0;
 
-        unsigned char* d = &data[ 0 ] + headerSize;
-        tile.verts = ( float* )d; d += vertsSize;
-        tile.polys = ( NavMeshPoly* )d; d += polysSize;
-        tile.links = ( NavMeshLink* )d; d += linksSize;
-        tile.detailMeshes = ( NavMeshPolyDetail* )d; d += detailMeshesSize;
-        tile.detailVerts = ( float* )d; d += detailVertsSize;
-        tile.detailTris = ( unsigned char* )d; d += detailTrisSize;
-        tile.bvTree = ( NavMeshBVNode* )d; d += bvtreeSize;
-        tile.offMeshCons = ( NavMeshOffMeshConnection* )d; d += offMeshLinksSize;
+        navMesh.addTile( &data[ 0 ], tileHeader.size, 0, 0, &tileRef );
 
-        // Build links freelist
-        tile.linksFreeList = 0;
-        tile.links[ header->maxLinkCount - 1 ].next = 0;
-        for ( int i = 0; i < header->maxLinkCount - 1; ++i )
-            tile.links[ i ].next = i + 1;
-
-        // Init tile.
-        tile.header = header;
-        tile.data = &data[ 0 ];
-        tile.dataSize = data.size();
-        tile.flags = 0;
-
-        //! build renderable
-        {
-            struct NavDetailTriangle
-            {
-                uint8_t idx0;
-                uint8_t idx1;
-                uint8_t idx2;
-                uint8_t unk;
-            };
-
-            Vector3f * verts = reinterpret_cast< Vector3f * >( tile.verts );
-            Vector3f * detailVerts = reinterpret_cast< Vector3f * >( tile.detailVerts );
-
-            TriangleGeometry & triangles = geometry.triangles;
-            triangles.Clear();
-
-            LineGeometry & lines = geometry.lines;
-            lines.Clear();
-
-            for ( int polyIdx = 0; polyIdx < tile.header->detailMeshCount; ++polyIdx )
-            {
-                NavMeshPoly & poly = reinterpret_cast< NavMeshPoly * >( tile.polys )[ polyIdx ];
-
-                auto polyType = poly.areaAndtype >> 6;
-
-                NavMeshPolyDetail & detail = reinterpret_cast< NavMeshPolyDetail * >( tile.detailMeshes )[ polyIdx ];
-                for ( int triIdx = 0; triIdx < detail.triCount; ++triIdx )
-                {
-                    NavDetailTriangle & triangle = reinterpret_cast< NavDetailTriangle * >( tile.detailTris )[ detail.triBase + triIdx ];
-
-                    uint8_t idx0 = triangle.idx0;
-                    uint8_t idx1 = triangle.idx1;
-                    uint8_t idx2 = triangle.idx2;
-
-                    Vector3f & v0 = idx0 < poly.vertCount ? verts[ poly.verts[ idx0 ] ] : detailVerts[ ( detail.vertBase + ( idx0 - poly.vertCount ) ) ];
-                    Vector3f & v1 = idx1 < poly.vertCount ? verts[ poly.verts[ idx1 ] ] : detailVerts[ ( detail.vertBase + ( idx1 - poly.vertCount ) ) ];
-                    Vector3f & v2 = idx2 < poly.vertCount ? verts[ poly.verts[ idx2 ] ] : detailVerts[ ( detail.vertBase + ( idx2 - poly.vertCount ) ) ];
-
-                    Vector3f vv0{ v0.z, v0.x, v0.y };
-                    Vector3f vv1{ v1.z, v1.x, v1.y };
-                    Vector3f vv2{ v2.z, v2.x, v2.y };
-
-                    triangles.AddTriangle( vv0, vv1, vv2 );
-
-                    lines.AddLine( vv0, vv1 );
-                    lines.AddLine( vv0, vv2 );
-                    lines.AddLine( vv1, vv2 );
-                }
-            }
-        }
+        duDebugDrawNavMesh( &geometry, navMesh, 0xFF );
     }
 
-    std::optional< MapNavMesh > NavMeshDebugger::LoadMapNavMesh( uint32_t mapId, const Vector2i & coord )
+    bool NavMeshDebugger::LoadMapNavMesh( uint32_t mapId, const Vector2i & coord )
     {
-        if ( m_lastLoadedNavMesh && m_lastLoadedNavMesh->mapId == mapId && m_lastLoadedNavMesh->coord.x == coord.x && m_lastLoadedNavMesh->coord.y == coord.y )
-            return m_lastLoadedNavMesh;
+        if ( m_mapGeometry.find( GetMapTileHash( mapId, coord ) ) != m_mapGeometry.end() )
+            return true;
 
-        std::ifstream file( Format( "F:\\Sunwell\\emu_data\\mmaps\\%03u%02u%02u.mmtile", mapId, coord.x, coord.y ), std::ios::in | std::ios::binary );
-        if ( !file.is_open() )
-            return std::nullopt;
+        std::ifstream file1( Format( "F:\\Sunwell\\emu_data\\mmaps\\%03u.mmap", mapId ), std::ios::in | std::ios::binary );
+        if ( !file1.is_open() )
+            return false;
 
-        m_lastLoadedNavMesh.emplace();
+        dtNavMeshParams params;
+        file1.read( reinterpret_cast< char * >( &params ), sizeof( dtNavMeshParams ) );
 
-        NavMeshTile & tile = m_lastLoadedNavMesh->tile;
-        std::vector< uint8_t > & data = m_lastLoadedNavMesh->data;
+        dtNavMesh navMesh;
+        if ( navMesh.init( &params ) != DT_SUCCESS )
+            return false;
 
-        LoadNavMeshTile( file, tile, data, m_geometry );
+        std::ifstream file2( Format( "F:\\Sunwell\\emu_data\\mmaps\\%03u%02u%02u.mmtile", mapId, coord.x, coord.y ), std::ios::in | std::ios::binary );
+        if ( !file2.is_open() )
+            return false;
 
-        return m_lastLoadedNavMesh;
+        auto & debugDraw = m_mapGeometry[ GetMapTileHash( mapId, coord ) ];
+
+        std::vector< uint8_t > data;
+        LoadNavMeshTile( file2, navMesh, data, debugDraw );
+
+        return true;
     }
 
     bool NavMeshDebugger::LoadModelNavMesh( uint32_t modelId )
@@ -182,15 +153,25 @@ namespace Debugger
         if ( m_modelGeometry.find( modelId ) != m_modelGeometry.end() )
             return true;
 
-        std::ifstream file( Format( "F:\\Sunwell\\emu_data\\mmaps\\models\\%05u.mmtile", modelId ), std::ios::in | std::ios::binary );
-        if ( !file.is_open() )
+        std::ifstream file1( Format( "F:\\Sunwell\\emu_data\\mmaps\\models\\%03u.mmap", modelId ), std::ios::in | std::ios::binary );
+        if ( !file1.is_open() )
+            return false;
+
+        dtNavMeshParams params;
+        file1.read( reinterpret_cast< char * >( &params ), sizeof( dtNavMeshParams ) );
+
+        dtNavMesh navMesh;
+        if ( navMesh.init( &params ) != DT_SUCCESS )
+            return false;
+
+        std::ifstream file2( Format( "F:\\Sunwell\\emu_data\\mmaps\\models\\%05u.mmtile", modelId ), std::ios::in | std::ios::binary );
+        if ( !file2.is_open() )
             return false;
 
         std::vector< uint8_t > data;
-        NavMeshTile tile;
 
-        m_modelGeometry.emplace( modelId, Colors::LightYellow );
-        LoadNavMeshTile( file, tile, data, m_modelGeometry[ modelId ] );
+        m_modelGeometry.emplace( modelId, DebugDetourDraw{} );
+        LoadNavMeshTile( file2, navMesh, data, m_modelGeometry[ modelId ] );
         return true;
     }
 }

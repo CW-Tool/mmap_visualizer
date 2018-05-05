@@ -3,6 +3,7 @@
 
 #include "math/Vector.hpp"
 #include "wow_client/Camera.hpp"
+#include "DebugDraw.h"
 
 #include <windows.h>
 #include <d3d9.h>
@@ -12,6 +13,7 @@
 #include <vector>
 #include <stack>
 #include <array>
+#include <memory>
 
 namespace Debugger
 {
@@ -219,6 +221,7 @@ namespace Debugger
 
         enum Type
         {
+            Point,
             Line,
             Triangle
         };
@@ -226,10 +229,12 @@ namespace Debugger
         Geometry( Colors color, Type type );
         virtual ~Geometry();
 
-        virtual void SetDeviceState( IDirect3DDevice9 * device ) const;
-        virtual void Render( IDirect3DDevice9* device ) const = 0;
+        void            AddVertex( const Vector3f & p0, std::optional< Colors > color = std::nullopt );
 
-        void         Clear()   { m_vertices.clear(); }
+        virtual void    SetDeviceState( IDirect3DDevice9 * device ) const;
+        virtual void    Render( IDirect3DDevice9* device ) const = 0;
+
+        void            Clear()   { m_vertices.clear(); }
 
     protected:
         std::vector< Vertex >   m_vertices;
@@ -238,6 +243,14 @@ namespace Debugger
 
         //! kill me for mutable :)
         mutable IDirect3DVertexBuffer9 * m_vertexBuffer;
+    };
+
+    class PointGeometry : public Geometry
+    {
+    public:
+        PointGeometry( Colors color );
+
+        virtual void    Render( IDirect3DDevice9* device ) const override;
     };
 
     class TriangleGeometry : public Geometry
@@ -286,6 +299,23 @@ namespace Debugger
         D3DXMATRIX proj;
 
         static Transform FromCamera( const Wow::Camera & camera );
+    };
+
+    class DebugDetourDraw : public duDebugDraw
+    {
+    public:
+        DebugDetourDraw() = default;
+
+        virtual void depthMask( bool state ) override;
+        virtual void texture( bool state ) override;
+        virtual void begin( duDebugDrawPrimitives prim, float size = 1.0f ) override;
+        virtual void vertex( const float* pos, unsigned int color ) override;
+        virtual void vertex( const float x, const float y, const float z, unsigned int color ) override;
+        virtual void vertex( const float* pos, unsigned int color, const float* uv ) override;
+        virtual void vertex( const float x, const float y, const float z, unsigned int color, const float u, const float v ) override;
+        virtual void end() override;
+
+        std::vector< std::unique_ptr< Geometry > > m_geometry;
     };
 
     class Renderer

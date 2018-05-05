@@ -24,6 +24,26 @@
     <ClCompile Include="contrib\minhook\src\HDE\hde64.c" />
     <ClCompile Include="contrib\minhook\src\hook.c" />
     <ClCompile Include="contrib\minhook\src\trampoline.c" />
+    <ClCompile Include="contrib\recastnavigation\DebugUtils\DebugDraw.cpp" />
+    <ClCompile Include="contrib\recastnavigation\DebugUtils\DetourDebugDraw.cpp" />
+    <ClCompile Include="contrib\recastnavigation\DebugUtils\RecastDebugDraw.cpp" />
+    <ClCompile Include="contrib\recastnavigation\DebugUtils\RecastDump.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourAlloc.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourCommon.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourNavMesh.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourNavMeshBuilder.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourNavMeshQuery.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourNode.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourObstacleAvoidance.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\Recast.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastAlloc.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastArea.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastContour.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastFilter.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastMesh.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastMeshDetail.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastRasterization.cpp" />
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastRegion.cpp" />
     <ClCompile Include="src\debugger\Debugger.cpp" />
     <ClCompile Include="src\debugger\main.cpp" />
     <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp" />
@@ -45,6 +65,21 @@
     <ClInclude Include="contrib\minhook\src\HDE\table32.h" />
     <ClInclude Include="contrib\minhook\src\HDE\table64.h" />
     <ClInclude Include="contrib\minhook\src\trampoline.h" />
+    <ClInclude Include="contrib\recastnavigation\DebugUtils\DebugDraw.h" />
+    <ClInclude Include="contrib\recastnavigation\DebugUtils\DetourDebugDraw.h" />
+    <ClInclude Include="contrib\recastnavigation\DebugUtils\RecastDebugDraw.h" />
+    <ClInclude Include="contrib\recastnavigation\DebugUtils\RecastDump.h" />
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourAlloc.h" />
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourAssert.h" />
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourCommon.h" />
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourNavMesh.h" />
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourNavMeshBuilder.h" />
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourNavMeshQuery.h" />
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourNode.h" />
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourObstacleAvoidance.h" />
+    <ClInclude Include="contrib\recastnavigation\Recast\Recast.h" />
+    <ClInclude Include="contrib\recastnavigation\Recast\RecastAlloc.h" />
+    <ClInclude Include="contrib\recastnavigation\Recast\RecastAssert.h" />
     <ClInclude Include="src\debugger\Debugger.hpp" />
     <ClInclude Include="src\debugger\math\Vector.hpp" />
     <ClInclude Include="src\debugger\memory\ProcessMemory.hpp" />
@@ -143,7 +178,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;DEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include;contrib/dxsdk;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include;contrib/dxsdk;contrib/recastnavigation/Detour;contrib/recastnavigation/Recast;contrib/recastnavigation/DebugUtils;contrib/recastnavigation/DetourTileCache</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -161,7 +196,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;DEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include;contrib/dxsdk;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include;contrib/dxsdk;contrib/recastnavigation/Detour;contrib/recastnavigation/Recast;contrib/recastnavigation/DebugUtils;contrib/recastnavigation/DetourTileCache</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -181,7 +216,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;DEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include;contrib/dxsdk;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include;contrib/dxsdk;contrib/recastnavigation/Detour;contrib/recastnavigation/Recast;contrib/recastnavigation/DebugUtils;contrib/recastnavigation/DetourTileCache</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -203,7 +238,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;DEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include;contrib/dxsdk;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src/debugger;contrib/minhook/include;contrib/dxsdk;contrib/recastnavigation/Detour;contrib/recastnavigation/Recast;contrib/recastnavigation/DebugUtils;contrib/recastnavigation/DetourTileCache</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>

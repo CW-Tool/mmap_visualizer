@@ -40,6 +40,18 @@
     <Filter Include="src\sniffer">
       <UniqueIdentifier>{b54fbe3c-0edc-457f-bc32-7b19ae2c29fa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="contrib\recastnavigation">
+      <UniqueIdentifier>{d12004b6-0c3b-4039-bfe7-31769bf275dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contrib\recastnavigation\recast">
+      <UniqueIdentifier>{23ddde31-b790-42d3-b7e9-795fa316d864}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contrib\recastnavigation\detour">
+      <UniqueIdentifier>{603760ca-92c9-472c-a90e-1df29159f6de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contrib\recastnavigation\debugutils">
+      <UniqueIdentifier>{9155c173-f2a7-4ece-acb3-d968b0dd7e8c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\debugger\main.cpp">
@@ -92,6 +104,66 @@
     </ClCompile>
     <ClCompile Include="src\debugger\mmaps\NavMeshDebugger.cpp">
       <Filter>src\mmaps</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\Recast.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastAlloc.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastArea.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastContour.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastFilter.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastMesh.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastMeshDetail.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastRasterization.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Recast\RecastRegion.cpp">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourAlloc.cpp">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourCommon.cpp">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourNavMesh.cpp">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourNavMeshBuilder.cpp">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourNavMeshQuery.cpp">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourNode.cpp">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\Detour\DetourObstacleAvoidance.cpp">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\DebugUtils\DebugDraw.cpp">
+      <Filter>contrib\recastnavigation\debugutils</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\DebugUtils\DetourDebugDraw.cpp">
+      <Filter>contrib\recastnavigation\debugutils</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\DebugUtils\RecastDebugDraw.cpp">
+      <Filter>contrib\recastnavigation\debugutils</Filter>
+    </ClCompile>
+    <ClCompile Include="contrib\recastnavigation\DebugUtils\RecastDump.cpp">
+      <Filter>contrib\recastnavigation\debugutils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +238,51 @@
     </ClInclude>
     <ClInclude Include="src\debugger\mmaps\NavMeshDebugger.hpp">
       <Filter>src\mmaps</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Recast\Recast.h">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Recast\RecastAlloc.h">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Recast\RecastAssert.h">
+      <Filter>contrib\recastnavigation\recast</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourAlloc.h">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourAssert.h">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourCommon.h">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourNavMesh.h">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourNavMeshBuilder.h">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourNavMeshQuery.h">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourNode.h">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\Detour\DetourObstacleAvoidance.h">
+      <Filter>contrib\recastnavigation\detour</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\DebugUtils\DebugDraw.h">
+      <Filter>contrib\recastnavigation\debugutils</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\DebugUtils\DetourDebugDraw.h">
+      <Filter>contrib\recastnavigation\debugutils</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\DebugUtils\RecastDebugDraw.h">
+      <Filter>contrib\recastnavigation\debugutils</Filter>
+    </ClInclude>
+    <ClInclude Include="contrib\recastnavigation\DebugUtils\RecastDump.h">
+      <Filter>contrib\recastnavigation\debugutils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

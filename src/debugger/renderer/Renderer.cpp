@@ -174,7 +174,6 @@ namespace Debugger
 
         if ( transform )
         {
-
             m_device->SetTransform( D3DTS_WORLD, &( *transform )->world );
             m_device->SetTransform( D3DTS_VIEW, &( *transform )->view );
             m_device->SetTransform( D3DTS_PROJECTION, &( *transform )->proj );
@@ -280,6 +279,11 @@ namespace Debugger
         }
     }
 
+    void Geometry::AddVertex( const Vector3f & p0, std::optional< Colors > color /*= std::nullopt */ )
+    {
+        m_vertices.push_back( Vertex{ p0, color ? *color : m_color } );
+    }
+
     void Geometry::SetDeviceState( IDirect3DDevice9 * device ) const
     {
         device->SetPixelShader( nullptr );
@@ -327,6 +331,9 @@ namespace Debugger
 
     void TriangleGeometry::Render( IDirect3DDevice9* device ) const
     {
+        if ( m_vertices.empty() )
+            return;
+
         SetDeviceState( device );
 
         const DWORD D3D_VERTEX_SETUP = D3DFVF_XYZ | D3DFVF_DIFFUSE;
@@ -346,6 +353,36 @@ namespace Debugger
         device->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_vertices.size() / 3 );
     }
 
+    PointGeometry::PointGeometry( Colors color )
+        : Geometry( color, Type::Point )
+    {
+        m_vertices.reserve( 200 );
+    }
+
+    void PointGeometry::Render( IDirect3DDevice9* device ) const
+    {
+        if ( m_vertices.empty() )
+            return;
+
+        SetDeviceState( device );
+
+        const DWORD D3D_VERTEX_SETUP = D3DFVF_XYZ | D3DFVF_DIFFUSE;
+
+        if ( m_vertexBuffer == nullptr )
+        {
+            device->CreateVertexBuffer( m_vertices.size() * sizeof( Vertex ), D3DUSAGE_WRITEONLY, D3D_VERTEX_SETUP, D3DPOOL_DEFAULT, &m_vertexBuffer, nullptr );
+
+            void * buffer = nullptr;
+            m_vertexBuffer->Lock( 0, m_vertices.size() * sizeof( Vertex ), &buffer, 0 );
+            memcpy( buffer, &m_vertices[ 0 ], m_vertices.size() * sizeof( Vertex ) );
+            m_vertexBuffer->Unlock();
+        }
+
+        device->SetFVF( D3D_VERTEX_SETUP );
+        device->SetStreamSource( 0, m_vertexBuffer, 0, sizeof( Vertex ) );
+        device->DrawPrimitive( D3DPT_POINTLIST, 0, m_vertices.size() );
+    }
+
     LineGeometry::LineGeometry( Colors color )
         : Geometry( color, Type::Line )
     {
@@ -360,6 +397,9 @@ namespace Debugger
 
     void LineGeometry::Render( IDirect3DDevice9* device ) const
     {
+        if ( m_vertices.empty() )
+            return;
+
         SetDeviceState( device );
 
         const DWORD D3D_VERTEX_SETUP = D3DFVF_XYZ | D3DFVF_DIFFUSE;
@@ -435,5 +475,51 @@ namespace Debugger
         D3DXMatrixIdentity( &result.world );
 
         return result;
+    }
+
+    void DebugDetourDraw::depthMask( bool state )
+    {
+
+    }
+
+    void DebugDetourDraw::texture( bool state )
+    {
+
+    }
+
+    void DebugDetourDraw::begin( duDebugDrawPrimitives prim, float size /*= 1.0f */ )
+    {
+        switch ( prim )
+        {
+            case DU_DRAW_LINES: m_geometry.push_back( std::make_unique< LineGeometry >( Colors::LightBlue ) ); break;
+            case DU_DRAW_POINTS: m_geometry.push_back( std::make_unique< PointGeometry >( Colors::LightSteelBlue ) ); break;
+            case DU_DRAW_QUADS: m_geometry.push_back( std::make_unique< TriangleGeometry >( Colors::AquaMarine ) ); break;
+            case DU_DRAW_TRIS: m_geometry.push_back( std::make_unique< TriangleGeometry >( Colors::LightYellow ) ); break;
+        }
+    }
+
+    void DebugDetourDraw::vertex( const float* pos, unsigned int color )
+    {
+        m_geometry.back()->AddVertex( { pos[ 2 ], pos[ 0 ], pos[ 1 ] }, Colors{ color } );
+    }
+
+    void DebugDetourDraw::vertex( const float x, const float y, const float z, unsigned int color )
+    {
+        m_geometry.back()->AddVertex( { z, x, y }, Colors{ color } );
+    }
+
+    void DebugDetourDraw::vertex( const float* pos, unsigned int color, const float* uv )
+    {
+        m_geometry.back()->AddVertex( { pos[ 2 ], pos[ 0 ], pos[ 1 ] }, Colors{ color } );
+    }
+
+    void DebugDetourDraw::vertex( const float x, const float y, const float z, unsigned int color, const float u, const float v )
+    {
+        m_geometry.back()->AddVertex( { z, x, y }, Colors{ color } );
+    }
+
+    void DebugDetourDraw::end()
+    {
+
     }
 }

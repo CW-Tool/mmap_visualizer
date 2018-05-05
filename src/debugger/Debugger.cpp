@@ -60,10 +60,10 @@ namespace Debugger
 
         g_debugger = this;
 
-        Wow::LuaState lua( m_memory );
-        lua.Execute( "AccountLoginAccountEdit:SetText('Root')" );
-        lua.Execute( "AccountLoginPasswordEdit:SetText('Root')" );
-        lua.Execute( "AccountLogin_Login()" );
+        //Wow::LuaState lua( m_memory );
+        //lua.Execute( "AccountLoginAccountEdit:SetText('Root')" );
+        //lua.Execute( "AccountLoginPasswordEdit:SetText('Root')" );
+        //lua.Execute( "AccountLogin_Login()" );
 
         auto ReadMonsterMove = [this]( PacketReader & packet )
         {
@@ -187,8 +187,8 @@ namespace Debugger
             paths.emplace_back( std::move( path ) );
         };
 
-        m_sniffer.AddPacketListener( Opcodes::SMSG_MONSTER_MOVE, ReadMonsterMove );
-        m_sniffer.AddPacketListener( Opcodes::SMSG_MONSTER_MOVE_TRANSPORT, ReadMonsterMove );
+        //m_sniffer.AddPacketListener( Opcodes::SMSG_MONSTER_MOVE, ReadMonsterMove );
+        //m_sniffer.AddPacketListener( Opcodes::SMSG_MONSTER_MOVE_TRANSPORT, ReadMonsterMove );
     }
 
     Vector2i GetTileCoord( Wow::Location & loc )
@@ -223,10 +223,20 @@ namespace Debugger
         auto player = m_objectMgr.GetLocalPlayer();
         auto camera = m_objectMgr.GetCamera();
 
-        if ( m_frame->IsNavMeshVisible() )
+        bool isNavMeshVisible = m_frame->IsNavMeshVisible();
+        static bool s_wasNavMeshVisible = isNavMeshVisible;
+
+        if ( isNavMeshVisible )
         {
+            if ( !s_wasNavMeshVisible )
+            {
+                m_navDebugger.Clear();
+            }
+
             m_navDebugger.Update( player, camera );
         }
+
+        s_wasNavMeshVisible = isNavMeshVisible;
     }
 
     void Debugger::Render()
